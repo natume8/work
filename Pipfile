@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+PyQt5 = "*"
+numpy = "*"
+Pillow = "*"
+svglib = "*"
+img2pdf = "*"
+PyPDF2 = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.6"
