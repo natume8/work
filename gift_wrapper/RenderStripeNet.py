@@ -1,16 +1,17 @@
 # -*- coding: utf_8 -*-
 import shutil
 import sys
+import os.path
 
 import numpy as np
 from PyQt5.QtSvg import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap, QIcon, QImage, QPainter, QFont, QColor, QPolygonF, QPen
 from PyQt5.QtWidgets import *
-import os.path
-from GiftBox import GiftBox
-from RenderCubeNet_ver2 import MAX_VERTICAL, MAX_HORIZON
-from InputStripeDetail import parameters
+
+from .GiftBox import GiftBox
+from .RenderCubeNet_ver2 import MAX_VERTICAL, MAX_HORIZON
+from .InputStripeDetail import parameters
 
 
 def render_stripe(vertical, horizon, high, s, u, offset, b2s_angle, b_angle):
@@ -21,9 +22,9 @@ def render_stripe(vertical, horizon, high, s, u, offset, b2s_angle, b_angle):
     u = float(u)
     offset = float(offset)
     g_box = GiftBox(vertical, horizon, high)
-    g_box.drawStripe(s, u, offset, b2s_angle, b_angle)
+    g_box.draw_stripe(s, u, offset, b2s_angle, b_angle)
     colors = parameters.color_set
-    minimum_p_s = g_box.getValidPaperSize(b_angle)  # (w, h)
+    minimum_p_s = g_box.get_valid_paper_size(b_angle)  # (w, h)
     w = MAX_HORIZON
     h = MAX_VERTICAL
     if h / w < minimum_p_s[1] / minimum_p_s[0]:

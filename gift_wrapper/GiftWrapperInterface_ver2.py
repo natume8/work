@@ -8,11 +8,11 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import QPixmap, QIcon, QImage, QPainter, QFont, QColor
 from PyQt5.QtWidgets import *
 import numpy as np
-from InputStripeDetail import SetDetailWindow, parameters
-from GiftBox import GiftBox
-from RenderCubeNet_ver2 import render_net_on_image, render_net_no_image, MAX_HORIZON, MAX_VERTICAL
-from RenderStripeNet import render_stripe
-from Save2DGraphicsInterface import render_net_real_size, render_stripe_real_size, save_svg_to_pdf
+from .InputStripeDetail import SetDetailWindow, parameters
+from .GiftBox import GiftBox
+from .RenderCubeNet_ver2 import render_net_on_image, render_net_no_image, MAX_HORIZON, MAX_VERTICAL
+from .RenderStripeNet import render_stripe
+from .Save2DGraphicsInterface import render_net_real_size, render_stripe_real_size, save_svg_to_pdf
 
 SHOKI_GAZO = ""
 
@@ -535,8 +535,8 @@ class GiftWrapperForm(QWidget):
                 and self.inputHigh.text().replace(".", "").isdecimal():
             g_box = GiftBox(float(self.inputVertical.text()), float(self.inputHorizon.text()),
                             float(self.inputHigh.text()))
-            g_box_theta = g_box.getOptimalTheta()
-            minimum_ps = g_box.getValidPaperSize(g_box_theta * (np.pi / 180))
+            g_box_theta = g_box.get_optimal_theta()
+            minimum_ps = g_box.get_valid_paper_size(g_box_theta * (np.pi / 180))
             if text != '指定なし' and (
                     default_paper_size[text][0] < minimum_ps[0] or default_paper_size[text][1] < minimum_ps[1]):
                 return False

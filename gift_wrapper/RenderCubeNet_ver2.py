@@ -1,10 +1,12 @@
 # -*- coding:utf-8 -*-
+import os
+
 import numpy as np
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPainter, QFont, QColor, QPen
 from PyQt5.QtSvg import *
-import os
-from GiftBox import GiftBox
+
+from .GiftBox import GiftBox
 
 default_paper_size = {
     'A4': [297.0, 210.0],
@@ -34,7 +36,7 @@ def render_net_no_image(vertical, horizon, high, theta, specify_ps):
     high = float(high)
     theta = theta * (np.pi / 180)
     g_box = GiftBox(vertical, horizon, high)
-    minimum_p_s = g_box.getValidPaperSize(theta)   # (w, h)
+    minimum_p_s = g_box.get_valid_paper_size(theta)  # (w, h)
     g_box.render(theta)
     dots_list_s = g_box.dots_to_render
     dots_list_ = [[i.x, i.y] for i in dots_list_s]
@@ -59,8 +61,9 @@ def render_net_no_image(vertical, horizon, high, theta, specify_ps):
     painter = NPainter()
     painter.begin(svg_gen)
     # thetaが有効 かつ 紙サイズの指定なし or thetaが有効で、最小サイズが指定紙より小さい
-    if g_box.isValidThete(theta) and (specify_paper_size == []
-                                      or (minimum_p_s[0] < specify_paper_size[0] and minimum_p_s[1] < specify_paper_size[1])):  # True 青
+    if g_box.is_valid_theta(theta) and (specify_paper_size == []
+                                        or (minimum_p_s[0] < specify_paper_size[0] and minimum_p_s[1] <
+                                            specify_paper_size[1])):  # True 青
         pen = QPen(QColor(0, 0, 255))
     else:
         pen = QPen(QColor(255, 0, 0))
@@ -106,7 +109,7 @@ def render_net_on_image(vertical, horizon, high, theta, pixmap, specify_ps):
     g_box.render(theta)
     dots_list_s = g_box.dots_to_render
     dots_list_ = [[i.x, i.y] for i in dots_list_s]
-    minimum_p_s = g_box.getValidPaperSize(theta)  # w, h
+    minimum_p_s = g_box.get_valid_paper_size(theta)  # w, h
     w = pixmap.width()
     h = pixmap.height()
     if h / w < minimum_p_s[1] / minimum_p_s[0]:
@@ -128,8 +131,9 @@ def render_net_on_image(vertical, horizon, high, theta, pixmap, specify_ps):
         specify_paper_size = default_paper_size[specify_ps]
     painter = NPainter()
     painter.begin(svg_gen)
-    if g_box.isValidThete(theta) and (specify_paper_size == []
-                                      or (minimum_p_s[0] < specify_paper_size[0] and minimum_p_s[1] < specify_paper_size[1])):  # 未実装
+    if g_box.is_valid_theta(theta) and (specify_paper_size == []
+                                        or (minimum_p_s[0] < specify_paper_size[0] and minimum_p_s[1] <
+                                            specify_paper_size[1])):  # 未実装
         pen = QPen(QColor(0, 0, 255))
     else:
         pen = QPen(QColor(255, 0, 0))

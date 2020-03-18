@@ -1,15 +1,17 @@
 # -*- coding:utf-8 -*-
+import os
+
 from PyQt5.QtCore import *
 from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF
 from PyQt5.QtSvg import *
-import os
 import numpy as np
-from GiftBox import GiftBox
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPDF, renderPM
-from RenderCubeNet_ver2 import NPainter
-from InputStripeDetail import parameters
 import PyPDF2
+
+from .GiftBox import GiftBox
+from .RenderCubeNet_ver2 import NPainter
+from .InputStripeDetail import parameters
 
 os.makedirs("./.tmp/", exist_ok=True)
 
@@ -23,7 +25,7 @@ def render_net_real_size(vertical, horizon, high, theta, save_path):
     g_box.render(theta)
     dots_list_s = g_box.dots_to_render
     dots_list_ = [[i.x, i.y] for i in dots_list_s]
-    minimum_p_s = g_box.getValidPaperSize(theta)  # (w, h)
+    minimum_p_s = g_box.get_valid_paper_size(theta)  # (w, h)
     svg_gen = QSvgGenerator()
     svg_gen.setFileName(save_path)  # output_file
     # px = x(mm) * dpi / 25.4
@@ -37,7 +39,7 @@ def render_net_real_size(vertical, horizon, high, theta, save_path):
 
     painter = NPainter()
     painter.begin(svg_gen)
-    if g_box.isValidThete(theta):  # 未実装
+    if g_box.is_valid_theta(theta):  # 未実装
         pen = QPen(QColor(0, 0, 255))
     else:
         pen = QPen(QColor(255, 0, 0))
@@ -83,8 +85,8 @@ def render_stripe_real_size(vertical, horizon, high, s, u, offset, b2s_angle, b_
     b2s_angle = b2s_angle * (np.pi / 180)
     colors = parameters.color_set
     g_box = GiftBox(vertical, horizon, high)
-    g_box.drawStripe(s, u, offset, b2s_angle, b_angle)
-    minimum_p_s = g_box.getValidPaperSize(b_angle)  # (w, h)
+    g_box.draw_stripe(s, u, offset, b2s_angle, b_angle)
+    minimum_p_s = g_box.get_valid_paper_size(b_angle)  # (w, h)
     svg_gen = QSvgGenerator()
     svg_gen.setFileName(save_path)
     output_p_s = [minimum_p_s[0] * svg_gen.logicalDpiX() / 25.4, minimum_p_s[1] * svg_gen.logicalDpiY() / 25.4]
