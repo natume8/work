@@ -10,7 +10,7 @@ from PyQt5.QtGui import QPixmap, QIcon, QImage, QPainter, QFont, QColor, QPolygo
 from PyQt5.QtWidgets import *
 
 from .GiftBox import GiftBox
-from .RenderCubeNet_ver2 import MAX_VERTICAL, MAX_HORIZON
+from .RenderCubeNet import MAX_VERTICAL, MAX_HORIZON
 from .InputStripeDetail import parameters
 
 
@@ -41,34 +41,29 @@ def render_stripe(vertical, horizon, high, s, u, offset, b2s_angle, b_angle):
 
     pen.setWidth(2)
 
-    # painter.drawPoint(10, 10)
-
     box_corners = g_box.dots_to_render
-    g_box_stripe = g_box.result
+    g_box_stripe = g_box.all_stripe
     dots_list = []
 
     painter.setPen(pen)
     sg = QPolygonF()
-    print(colors)
     c_i = 0
     for unit_stripe_shape in g_box_stripe:
-        print(type(unit_stripe_shape))
         for unit_stripe_seg in unit_stripe_shape.get():
             s_p = []
             for s_point in unit_stripe_seg.get():
                 # 左右反転用
-                # sp = QPointF(-s_point.x * (render_paper[1] / minimum_p_s[1]) + render_paper[0],
-                sp = QPointF(s_point.x * (render_paper[1] / minimum_p_s[1]),
+                # sp = QPointF(s_point.x * (render_paper[1] / minimum_p_s[1]),
+                sp = QPointF(-s_point.x * (render_paper[1] / minimum_p_s[1]) + render_paper[0],
                              -s_point.y * (render_paper[1] / minimum_p_s[1]) + render_paper[1])
                 s_p.append(sp)
             sg = QPolygonF(s_p)
             pen = QPen(Qt.NoPen)
             if not colors:
-                painter.setBrush(QColor(unit_stripe_shape.r, unit_stripe_shape.g, unit_stripe_shape.b))
+                painter.setBrush(QColor(unit_stripe_shape.r,
+                                        unit_stripe_shape.g, unit_stripe_shape.b))
             else:
-                print(colors[c_i])
                 painter.setBrush(QColor(colors[c_i]))
-            print(type(unit_stripe_seg))
             painter.setPen(pen)
             # 図形の描画
             painter.drawPolygon(sg, len(sg))
@@ -87,8 +82,8 @@ def render_stripe(vertical, horizon, high, s, u, offset, b2s_angle, b_angle):
 
     for c_point in box_corners:
         # 左右反転用
-        # dots_list.append(QPointF(-c_point.x * (render_paper[1] / minimum_p_s[1]) + render_paper[0],
-        dots_list.append(QPointF(c_point.x * (render_paper[1] / minimum_p_s[1]),
+        # dots_list.append(QPointF(c_point.x * (render_paper[1] / minimum_p_s[1]),
+        dots_list.append(QPointF(-c_point.x * (render_paper[1] / minimum_p_s[1]) + render_paper[0],
                                  -c_point.y * (render_paper[1] / minimum_p_s[1]) + render_paper[1]))
     # 以下，展開図描画
     painter.drawLine(dots_list[0], dots_list[1])
@@ -125,12 +120,14 @@ class SRenderStripe(QWidget):
         self.setGeometry(150, 100, 1300, 700)
         # 箱の縦横高さ，線の幅、線の間、オフセット、箱に対するストライプの角度、箱の角度
         # render_stripe(100, 60, 30, 10, 10, 10, 45 / 180 * np.pi, 45 / 180 * np.pi)
-        render_stripe(300, 200, 50, 20, 10, 0, 45 / 180 * np.pi, 0.8779006137531478)
+        render_stripe(300, 200, 50, 20, 10, 0, 45 /
+                      180 * np.pi, 0.8779006137531478)
         renderer = QSvgRenderer('./.tmp/output_render_wrap.svg')
         w, h = renderer.defaultSize().width(), renderer.defaultSize().height()
         self.view_boxes = QVBoxLayout(self)
         self.lbl = QLabel()
-        self.pixmap = QImage(renderer.defaultSize(), QImage.Format_ARGB32_Premultiplied)
+        self.pixmap = QImage(renderer.defaultSize(),
+                             QImage.Format_ARGB32_Premultiplied)
         self.pixmap.fill(QColor("white").rgb())
         painter = QPainter(self.pixmap)
         painter.restore()

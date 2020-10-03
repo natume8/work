@@ -1,16 +1,18 @@
 # -*- coding:utf-8 -*-
 import os
 
-from PyQt5.QtCore import *
-from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF
-from PyQt5.QtSvg import *
 import numpy as np
+from PyQt5.QtCore import *
+from PyQt5.QtGui import QPainter, QColor, QPen, QPolygonF, QImage, QPixmap
+from PyQt5.QtSvg import *
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPDF, renderPM
 import PyPDF2
+import img2pdf
+from PIL import Image
 
 from .GiftBox import GiftBox
-from .RenderCubeNet_ver2 import NPainter
+from .RenderCubeNet import NPainter
 from .InputStripeDetail import parameters
 
 os.makedirs("./.tmp/", exist_ok=True)
@@ -29,7 +31,8 @@ def render_net_real_size(vertical, horizon, high, theta, save_path):
     svg_gen = QSvgGenerator()
     svg_gen.setFileName(save_path)  # output_file
     # px = x(mm) * dpi / 25.4
-    output_p_s = [minimum_p_s[0] * svg_gen.logicalDpiX() / 25.4, minimum_p_s[1] * svg_gen.logicalDpiY() / 25.4]
+    output_p_s = [minimum_p_s[0] * svg_gen.logicalDpiX() / 25.4,
+                  minimum_p_s[1] * svg_gen.logicalDpiY() / 25.4]
     svg_gen.setSize(QSize(output_p_s[0], output_p_s[1]))
     # svg_gen.setViewBox(QRect(0, 0, minimum_p_s[0], minimum_p_s[1]))
 
@@ -72,6 +75,7 @@ def render_net_real_size(vertical, horizon, high, theta, save_path):
     painter.drawRect(0, 0, output_p_s[0], output_p_s[1])
 
     painter.end()
+    return minimum_p_s
 
 
 def render_stripe_real_size(vertical, horizon, high, s, u, offset, b2s_angle, b_angle, save_path):
@@ -89,7 +93,8 @@ def render_stripe_real_size(vertical, horizon, high, s, u, offset, b2s_angle, b_
     minimum_p_s = g_box.get_valid_paper_size(b_angle)  # (w, h)
     svg_gen = QSvgGenerator()
     svg_gen.setFileName(save_path)
-    output_p_s = [minimum_p_s[0] * svg_gen.logicalDpiX() / 25.4, minimum_p_s[1] * svg_gen.logicalDpiY() / 25.4]
+    output_p_s = [minimum_p_s[0] * svg_gen.logicalDpiX() / 25.4,
+                  minimum_p_s[1] * svg_gen.logicalDpiY() / 25.4]
 
     svg_gen.setSize(QSize(output_p_s[0], output_p_s[1]))
     painter = QPainter()
@@ -106,35 +111,8 @@ def render_stripe_real_size(vertical, horizon, high, s, u, offset, b2s_angle, b_
 
     painter.drawPoint(20, 20)
 
-    box_corners = g_box.dots_to_render
-    g_box_stripe = g_box.result
-    dots_list = []
-    """for c_point in box_corners:
-        # 左右反転用
-        # dots_list.append(QPointF(-c_point.x * (render_paper[1] / minimum_p_s[1]) + render_paper[0],
-        dots_list.append(QPointF(c_point.x * svg_gen.logicalDpiX() / 25.4,
-                                 -c_point.y * svg_gen.logicalDpiX() / 25.4 + output_p_s[1]))
-    # 以下，展開図描画
-    painter.drawLine(dots_list[0], dots_list[1])
-    painter.drawLine(dots_list[1], dots_list[2])
-    painter.drawLine(dots_list[2], dots_list[3])
-    painter.drawLine(dots_list[3], dots_list[0])
-    painter.drawLine(dots_list[0], dots_list[5])
-    painter.drawLine(dots_list[4], dots_list[5])
-    painter.drawLine(dots_list[4], dots_list[3])
-    painter.drawLine(dots_list[3], dots_list[9])
-    painter.drawLine(dots_list[4], dots_list[8])
-    painter.drawLine(dots_list[9], dots_list[8])
-    painter.drawLine(dots_list[9], dots_list[6])
-    painter.drawLine(dots_list[6], dots_list[7])
-    painter.drawLine(dots_list[7], dots_list[8])
-    painter.drawLine(dots_list[8], dots_list[11])
-    painter.drawLine(dots_list[11], dots_list[10])
-    painter.drawLine(dots_list[10], dots_list[7])
-    painter.drawLine(dots_list[6], dots_list[12])
-    painter.drawLine(dots_list[12], dots_list[13])
-    painter.drawLine(dots_list[13], dots_list[7])
-    # g.plot(c_point.x, c_point.y, marker='*') """
+    g_box_stripe = g_box.all_stripe
+
     painter.setPen(pen)
     c_i = 0
     sg = QPolygonF()
@@ -151,9 +129,9 @@ def render_stripe_real_size(vertical, horizon, high, s, u, offset, b2s_angle, b_
             sg = QPolygonF(s_p)
             pen = QPen(Qt.NoPen)
             if not colors:
-                painter.setBrush(QColor(unit_stripe_shape.r, unit_stripe_shape.g, unit_stripe_shape.b))
+                painter.setBrush(QColor(unit_stripe_shape.r,
+                                        unit_stripe_shape.g, unit_stripe_shape.b))
             else:
-                print(colors[c_i])
                 painter.setBrush(QColor(colors[c_i]))
             painter.setPen(pen)
             # 図形の描画
@@ -170,9 +148,45 @@ def render_stripe_real_size(vertical, horizon, high, s, u, offset, b2s_angle, b_
     painter.end()
 
 
-def render_wrap_paper_and_net_real_size():
-    # ######実装する
-    pass
+# pixmap_pは展開図, g_pathは保存する画像のパス
+def save_wrap_paper(w, h, pw, ph, scaled_v, g_path, out_w, out_h):
+    [w, h, pw, ph] = [i * scaled_v for i in [w, h, pw, ph]]
+
+    im = Image.open(g_path[0])
+    if 'dpi' in im.info:
+        im_dpi = im.info['dpi']
+    else:
+        im_dpi = (300, 300)
+
+    im_crop = im.crop((w, h, w + pw + 0.1, h + ph + 0.1))
+    [out_w, out_h] = [i * im_dpi[0] / 25.4 for i in [out_w, out_h]]
+    im_crop_resize = im_crop.resize((int(out_w), int(out_h)))
+    im_crop_resize.save(".tmp/save_wrap_paper.png", dpi=(im_dpi[0], im_dpi[1]))
+
+
+def render_wrap_paper_and_net_real_size(vertical, horizon, high, theta, save_path, g_path,
+                                        w, h, pw, ph, scaled):
+    tmp_box = ".tmp/save_box.svg"
+    tmp_box_pdf = ".tmp/save_box.pdf"
+    tmp_wrap_pdf = ".tmp/save_wrap.pdf"
+    out = render_net_real_size(vertical, horizon, high, theta, tmp_box)
+    save_wrap_paper(w, h, pw, ph, scaled, g_path, out[0], out[1])
+    drawing = svg2rlg(tmp_box)
+    renderPDF.drawToFile(drawing, tmp_box_pdf)
+    try:
+        with open(tmp_wrap_pdf, "wb") as f:
+            f.write(img2pdf.convert(".tmp/save_wrap_paper.png"))
+    except OSError:
+        print("file is Opening")
+    merger = PyPDF2.PdfFileMerger()
+    merger.append(tmp_box_pdf)
+    merger.append(tmp_wrap_pdf)
+    merger.write(save_path)
+    merger.close()
+    os.remove(tmp_box)
+    os.remove(tmp_box_pdf)
+    os.remove(tmp_wrap_pdf)
+    os.remove(".tmp/save_wrap_paper.png")
 
 
 def save_svg_to_pdf(vertical, horizon, high, theta, save_path, s=None, u=None, offset=None, b2s_angle=None):
@@ -183,7 +197,8 @@ def save_svg_to_pdf(vertical, horizon, high, theta, save_path, s=None, u=None, o
         render_net_real_size(vertical, horizon, high, theta, tmp_svg)
         drawing = svg2rlg(tmp_svg)
         renderPDF.drawToFile(drawing, tmp_pdf)
-        render_stripe_real_size(vertical, horizon, high, s, u, offset, b2s_angle, theta, tmp_svg)
+        render_stripe_real_size(vertical, horizon, high,
+                                s, u, offset, b2s_angle, theta, tmp_svg)
         drawing = svg2rlg(tmp_svg)
         renderPDF.drawToFile(drawing, tmp_pdf_w)
         merger = PyPDF2.PdfFileMerger()

@@ -92,7 +92,8 @@ class SetDetailWindow(QDialog):
         label_s_angle = QLabel('* ストライプの角度 (度)')
         label_s_angle.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         self.label_s_angle_t = QLineEdit("45.0")
-        self.label_s_angle_t.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.label_s_angle_t.setSizePolicy(
+            QSizePolicy.Fixed, QSizePolicy.Fixed)
         parameters.stripe_theta = 45.0
         # self.label_s_angle_t.textChanged.connect(self.fill_value)
         # self.label_s_angle_t.editingFinished.connect(self.fill_value)
@@ -106,14 +107,16 @@ class SetDetailWindow(QDialog):
         edit_detail = QGridLayout()
         edit_detail.setSpacing(10)
         self.layout = QVBoxLayout(self)
-        edit_detail.addWidget(warinig_label, 0, 1, 1, 2, alignment=Qt.AlignHCenter)
+        edit_detail.addWidget(warinig_label, 0, 1, 1, 2,
+                              alignment=Qt.AlignHCenter)
         edit_detail.addWidget(label_s_w, 1, 1, alignment=Qt.AlignHCenter)
         edit_detail.addWidget(self.label_s_w_t, 1, 2)
         edit_detail.addWidget(label_s_i_w, 2, 1, alignment=Qt.AlignHCenter)
         edit_detail.addWidget(self.label_s_i_w_t, 2, 2)
         edit_detail.addWidget(label_offset, 3, 1, alignment=Qt.AlignHCenter)
         edit_detail.addWidget(self.label_offset_t, 3, 2)
-        edit_detail.addWidget(label_s_angle, 4, 1, 2, 1, alignment=Qt.AlignHCenter)
+        edit_detail.addWidget(label_s_angle, 4, 1, 2, 1,
+                              alignment=Qt.AlignHCenter)
         edit_detail.addWidget(self.label_s_angle_t, 4, 2)
         edit_detail.addWidget(self.angle_slider, 5, 2)
         self.input_group.setLayout(edit_detail)
@@ -125,7 +128,8 @@ class SetDetailWindow(QDialog):
         self.c_palette = QVBoxLayout(self)
         self.c_palette.setSpacing(20)
         self.c_palette_list = QListWidget(self)
-        self.c_palette_list.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.c_palette_list.setSelectionMode(
+            QAbstractItemView.ExtendedSelection)
         self.add_num = 0
 
         self.bg_color_set = QGroupBox("背景色の選択")
@@ -139,7 +143,8 @@ class SetDetailWindow(QDialog):
         select_color_button = QPushButton("選択")
         select_color_button.clicked.connect(self.select_back_ground_color)
         select_color_button.setFocusPolicy(Qt.NoFocus)
-        self.select_back_color.addWidget(select_b_label, alignment=Qt.AlignRight)
+        self.select_back_color.addWidget(
+            select_b_label, alignment=Qt.AlignRight)
         self.select_back_color.addWidget(self.select_c_label)
         self.select_back_color.addWidget(select_color_button)
         self.bg_color_set.setLayout(self.select_back_color)
@@ -200,7 +205,6 @@ class SetDetailWindow(QDialog):
         buttons.addWidget(switch_button)
         self.layout.addLayout(buttons)
 
-
         self.c_palette_list.itemDoubleClicked.connect(self.change_color_column)
 
     # ヘルプ書かなきゃ
@@ -253,14 +257,16 @@ class SetDetailWindow(QDialog):
             self.c_palette_list.takeItem(i)
             self.c_palette_list.insertItem(i, s_1)
             self.c_palette_list.insertItem(i, s_2)
-            parameters.color_set[i], parameters.color_set[i + 1] = parameters.color_set[i + 1], parameters.color_set[i]
+            parameters.color_set[i], parameters.color_set[i +
+                                                          1] = parameters.color_set[i + 1], parameters.color_set[i]
 
     def select_back_ground_color(self, c=None):
         if c is False:
             c = self.select_color()
         if c:
             parameters.background_color = c
-            self.select_c_label.setStyleSheet(f'background-color:{parameters.background_color}')
+            self.select_c_label.setStyleSheet(
+                f'background-color:{parameters.background_color}')
 
     def select_color(self):
         color = QColorDialog.getColor(Qt.white, self)
