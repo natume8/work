@@ -30,14 +30,15 @@ class NPainter(QPainter):
         self.drawLine(point1[0], point1[1], point2[0], point2[1])
 
 
-def render_net_no_image(vertical, horizon, high, theta, specify_ps):
-    vertical = float(vertical)
-    horizon = float(horizon)
-    high = float(high)
-    theta = theta * (np.pi / 180)
-    g_box = GiftBox(vertical, horizon, high)
+def render_net_no_image(g_box, theta, specify_ps):
+    # vertical = float(vertical)
+    # horizon = float(horizon)
+    # high = float(high)
+    # theta = theta * (np.pi / 180)
+    # g_box = GiftBox(vertical, horizon, high)
     minimum_p_s = g_box.get_valid_paper_size(theta)   # (w, h)
     g_box.render(theta)
+
     dots_list_s = g_box.dots_to_render
     dots_list_ = [[i.x, i.y] for i in dots_list_s]
     specify_paper_size = []

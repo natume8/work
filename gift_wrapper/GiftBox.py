@@ -167,9 +167,6 @@ class GiftBox:
         # print(self.num1,self.num2,self.num3)
 
         self.alpha = self.beta = self.gamma = self.num3 / 2
-
-    # 描画っぽい形式に直します。今はmatplotで確認しています
-    def render(self, theta):
         decoi = Dot(0, 0)
         self.dots_to_render = [decoi]
         decoi = Dot(0, self.num3)
@@ -199,6 +196,9 @@ class GiftBox:
         decoi = Dot(2 * self.num2 + 2 * self.num3, -self.num1)
         self.dots_to_render.append(decoi)
 
+    # 描画っぽい形式に直します。今はmatplotで確認しています
+
+    def render(self, theta):
         # thetaを元にu,vを算出する
         # 条件式：
         # print("ゆとり")
@@ -213,6 +213,7 @@ class GiftBox:
         # print(w,h)
 
         for e_dot in self.dots_to_render:
+
             e_dot.rot(0, 0, theta)
             e_dot.move(w, h)
 
@@ -272,36 +273,6 @@ class GiftBox:
         return min(values)[1] / 10
 
     def draw_stripe(self, line_w, interval_w, offset, theta2, theta1):
-        # append box's dots
-        decoi = Dot(0, 0)
-        self.dots_to_render = [decoi]
-        decoi = Dot(0, self.num3)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(self.num2, self.num3)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(self.num2, 0)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(self.num2, -self.num1)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(0, -self.num1)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(2 * self.num2 + self.num3, 0)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(2 * self.num2 + self.num3, -self.num1)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(self.num2 + self.num3, -self.num1)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(self.num2 + self.num3, 0)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(2 * self.num2 + self.num3, -self.num1 - self.num3)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(self.num2 + self.num3, -self.num1 - self.num3)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(2 * self.num2 + 2 * self.num3, 0)
-        self.dots_to_render.append(decoi)
-        decoi = Dot(2 * self.num2 + 2 * self.num3, -self.num1)
-        self.dots_to_render.append(decoi)
-
         # define boundary condition
         p = 2 * self.num1 - 2 * self.num2 * \
             np.tan(theta1) + (1 - np.tan(theta1)) * self.num3 + self.beta
@@ -311,7 +282,7 @@ class GiftBox:
         h = p * np.cos(theta1)
 
         # return
-        self.all_stripe = []  # ########## selfつけました
+        self.all_stripe = []
 
         # start calculate stripe points
         dist = offset
@@ -505,6 +476,14 @@ class GiftBox:
                     e_dot.rot(0, 0, theta1)
                     e_dot.move(w, h)
                     # g.plot(e_dot.x, e_dot.y, marker='o', color=[e_stripe.r / 255, e_stripe.g / 255, e_stripe.b / 255])
+
+    def draw_continuous_picture(self):
+        line_w = 10
+        interval_w = 10
+        offset = 10
+        theta2 = 43
+        theta1 = 45
+        return True
 
 
 if __name__ == '__main__':

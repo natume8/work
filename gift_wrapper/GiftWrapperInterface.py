@@ -120,6 +120,8 @@ class GiftWrapperForm(QWidget):
         self.m_x = 0
         self.m_y = 0
         self.magnification = 1
+        self.giftbox = None
+        self.b_theta = None
         self.initUI()
 
     def initUI(self):
@@ -404,7 +406,10 @@ class GiftWrapperForm(QWidget):
         self.w_lbl.setPixmap(QPixmap.fromImage(self.w_pixmap))
 
     def render_guide_line_with_no_paper(self, vertical, horizon, high, theta):
-        m_ps = render_net_no_image(vertical, horizon, high, theta,
+        theta = theta * (np.pi / 180)
+        # if self.giftbox is None:
+        self.giftbox = GiftBox(vertical, horizon, high)
+        m_ps = render_net_no_image(self.giftbox, theta,
                                    self.paper_size.itemText(self.paper_size.currentIndex()).split()[0])
         renderer = QSvgRenderer('./.tmp/output_render.svg')
         w, h = renderer.defaultSize().width() * 4 / \
@@ -464,6 +469,9 @@ class GiftWrapperForm(QWidget):
                       QMessageBox.Ok, QMessageBox.Ok)
             self.d_w.setWindowFlag(Qt.WindowStaysOnTopHint)
         else:  # レンダリング実行
+            vertical = float(vertical)
+            horizon = float(horizon)
+            high = float(high)
             if self.sld.value() != theta * 10:
                 self.sld.setValue(int(theta * 10))
                 self.theta_value.setText(str(theta))
