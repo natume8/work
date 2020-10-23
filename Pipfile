@@ -14,5 +14,8 @@ opencv-python = "*"
 
 [dev-packages]
 
+[scripts]
+app = "python app.py"
+
 [requires]
 python_version = "3.7"
