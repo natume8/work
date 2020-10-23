@@ -33,28 +33,26 @@ class Example(QWidget):
         self.show()
 
     def gazou(self):
+        H = 2
+        W = 6
+        rscale = 0.3
+
         lbl = QLabel(self)
-        #cvImg = cv2.imread("./pictures/sample.png")
-        #print(cvImg)
-        #height, width, channel = cvImg.shape
-        #bytesPerLine = 3 * width
-        #qImg = QImage(cvImg.data, width, height,
-        #              bytesPerLine, QImage.Format_RGB888).rgbSwapped()
-        #pixmap01 = QPixmap.fromImage(qImg)
-        #trans = QTransform()
-        #pixmap0 = 1
         im1 = Image.open('./pictures/sample.png')
-        canvas = Image.new('RGB', (im1.width * 6, im1.height), (255, 255, 255))
-        for i in range(6):
-            canvas.paste(im1, (im1.width * i, 0))
+        canvas = Image.new('RGBA', (im1.width * W, im1.height * H), (100, 100, 100))
+        for h in range(H):
+            row = Image.new('RGBA', (im1.width * W, im1.height), (60, 60, 60))
+            for w in range(W):
+                row.paste(im1, (im1.width * w, 0))
+            canvas.paste(row, (0, im1.height * h))
         #im = im.rotate(45, expand=True)
-        canvas = canvas.rotate(30.5, expand=True)
+        #canvas = canvas.rotate(30.5, expand=True)
         canvas.show()
         #im1.show()
-        #qim = ImageQt(canvas)
-        #
-        #pixmap01 = QPixmap.fromImage(qim)
-        #lbl.setPixmap(pixmap01)
+        canvas = canvas.resize((int(im1.width * W * rscale), int(im1.height * H * rscale)))
+        qim = ImageQt(canvas)
+        pixmap01 = QPixmap.fromImage(qim)
+        lbl.setPixmap(pixmap01)
         self.imageArea.addWidget(lbl)
 
 
