@@ -13,6 +13,7 @@ PyPDF2 = "*"
 opencv-python = "*"
 
 [dev-packages]
+matplotlib = "*"
 
 [scripts]
 app = "python app.py"

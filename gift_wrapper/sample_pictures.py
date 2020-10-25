@@ -10,6 +10,9 @@ from PyQt5.QtGui import QPixmap, QImage, QTransform
 import cv2
 from PIL import Image
 from PIL.ImageQt import ImageQt
+import matplotlib.pyplot as plt
+import numpy as np
+from GiftBox import GiftBox
 
 
 class Example(QWidget):
@@ -19,6 +22,11 @@ class Example(QWidget):
 
         self.lbl = None
         self.initUI()
+        self.A = 150
+        self.B = 120
+        self.C = 30
+        self.theta = 45
+        self.giftbox_render()
 
     def initUI(self):
 
@@ -54,6 +62,19 @@ class Example(QWidget):
         pixmap01 = QPixmap.fromImage(qim)
         lbl.setPixmap(pixmap01)
         self.imageArea.addWidget(lbl)
+
+    def giftbox_render(self):
+        gift_b = GiftBox(self.A, self.B, self.C)
+        gift_b.render(self.theta / 180 * np.pi)
+        gift_b.draw_stripe(10, 10, 5, self.theta / 180 * np.pi, 45 / 180 * np.pi)
+        #gift = gift_b.dots_to_render
+        gift = gift_b.all_stripe
+        for stripe in gift:
+            for seg in stripe.get():
+                for dot in seg.get():
+                    plt.plot(dot.x, dot.y, marker='.', markersize=15)
+        plt.show(block=False)
+
 
 
 if __name__ == '__main__':
