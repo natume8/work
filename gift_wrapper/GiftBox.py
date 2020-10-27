@@ -367,7 +367,7 @@ class GiftBox:
                 dist += interval_w
             is_bottom_line = not is_bottom_line
 
-        # メイン面を元に他の面を作る
+        #メイン面を元に他の面を作る
         provis_result = []
         for e_stripe in self.all_stripe:
             for e_seg in e_stripe.get():
@@ -477,13 +477,217 @@ class GiftBox:
                     e_dot.move(w, h)
                     # g.plot(e_dot.x, e_dot.y, marker='o', color=[e_stripe.r / 255, e_stripe.g / 255, e_stripe.b / 255])
 
-    def draw_continuous_picture(self):
+    def draw_continuous_picture(self, s, u, offset, b2s_angle, b_angle):
         line_w = 10
         interval_w = 10
         offset = 10
-        theta2 = 43
+        theta2 = 45
         theta1 = 45
-        return True
+        # define boundary condition
+        p = 2 * self.num1 - 2 * self.num2 * \
+            np.tan(theta1) + (1 - np.tan(theta1)) * self.num3 + self.beta
+        q = p - self.num3 * np.tan(theta1)
+        l2 = q / 2
+        w = (l2 + self.num3) * np.sin(theta1)
+        h = p * np.cos(theta1)
+
+        # return
+        self.all_stripe = []
+
+        # start calculate stripe points
+        dist = offset
+        is_bottom_line = False
+        is_upside = False
+        is_left_side = False
+        judge = [self.num1 ** 2 + self.num2 **
+                 2, self.num1 ** 2 + self.num2 ** 2]
+        # while dist < (self.num1 * np.cos(theta2) + self.num2 * np.cos(theta2)):     # 描画範囲内
+        while judge[1] <= judge[0]:
+            judge[0] = judge[1]
+            judge[1] = (self.num2 - dist * np.sin(theta2)) ** 2 + \
+                (self.num1 - dist * np.cos(theta2)) ** 2
+            if is_bottom_line is False:
+                _stripe = Stripe()
+                _seg = StripeSegment()
+
+            if dist == 0:
+                _dot = Dot(0, 0)
+                _seg.append(_dot)
+                dist += line_w
+                is_bottom_line = True
+                continue
+
+            if (np.tan(theta2) * dist * np.sin(theta2) + dist * np.cos(theta2)) / np.tan(theta2) < self.num2:
+                # 上辺に接している
+                is_upside = True
+                _dot = Dot((np.tan(theta2) * dist * np.sin(theta2) +
+                            dist * np.cos(theta2)) / np.tan(theta2), 0)
+                _seg.append(_dot)
+            else:
+                # 右辺に接している
+                if np.tan(theta2) * self.num2 - np.tan(theta2) * dist * np.sin(theta2) \
+                        - dist * np.cos(theta2) < -self.num1:  # 下に溢れたら
+                    _dot = Dot(self.num2, -self.num1)
+                    _seg.append(_dot)
+                    break
+                else:
+                    _dot = Dot(self.num2,
+                               np.tan(theta2) * self.num2 - np.tan(theta2) * dist * np.sin(theta2) - dist * np.cos(
+                                   theta2))
+                    _seg.append(_dot)
+                if is_upside is True & is_bottom_line is True:  # 点が増えるパターン
+                    _dot = Dot(self.num2, 0)
+                    _seg.append(_dot)
+                is_upside = False
+
+            if (-np.tan(theta2) * dist * np.sin(theta2) - dist * np.cos(theta2)) > -self.num1:
+                # 左辺に接している
+                is_left_side = True
+                _dot = Dot(0, -np.tan(theta2) * dist *
+                           np.sin(theta2) - dist * np.cos(theta2))
+                _seg.append(_dot)
+            else:
+                # 下辺に接している
+                if (-self.num1 + np.tan(theta2) * dist * np.sin(theta2) + dist * np.cos(theta2)) / np.tan(
+                        theta2) > self.num2:
+                    _dot = Dot(self.num2, -self.num1)
+                    _seg.append(_dot)
+                    break
+                else:
+                    _dot = Dot(
+                        (-self.num1 + np.tan(theta2) * dist * np.sin(theta2) +
+                         dist * np.cos(theta2)) / np.tan(theta2),
+                        -self.num1)
+                    _seg.append(_dot)
+                if is_left_side == True & is_bottom_line == True:  # 点が増えるパターン
+                    _dot = Dot(0, -self.num1)
+                    _seg.append(_dot)
+                is_left_side = False
+
+            if is_bottom_line is True:
+                # メイン面についてのみ作る
+                _stripe.append(_seg)
+                _stripe.setcolor(rand.randint(0, 255), rand.randint(
+                    0, 255), rand.randint(0, 255))
+                self.all_stripe.append(_stripe)
+
+            if is_bottom_line is False:
+                dist += line_w
+            else:
+                dist += interval_w
+            is_bottom_line = not is_bottom_line
+
+        ##メイン面を元に他の面を作る
+        #provis_result = []
+        #for e_stripe in self.all_stripe:
+        #    for e_seg in e_stripe.get():
+        #        _seg1 = e_seg.reflect(
+        #            Dot(-self.num3 / 2, 0), Dot(-self.num3 / 2, -self.num1))  # 左に鏡映
+        #        provis_result.append(_seg1)
+        #        _seg2 = e_seg.reflect(Dot(0, -(self.num1 * 2 + self.num3) / 2),
+        #                              Dot(self.num2, -(self.num1 * 2 + self.num3) / 2))  # 右下に鏡映
+        #        provis_result.append(_seg2)
+        #        _seg3 = e_seg.reflect(Dot((self.num2 * 2 + self.num3) / 2, 0),
+        #                              Dot((self.num2 * 2 + self.num3) / 2, -self.num1))  # 右に鏡映
+        #        provis_result.append(_seg3)
+        #    for e_seg in provis_result:
+        #        e_stripe.append(e_seg)
+        #    provis_result.clear()
+
+        ## 側面について追加
+        #for e_stripe in self.all_stripe:
+        #    for e_seg in e_stripe.get():
+        #        # mainの左
+        #        if e_seg.have_vertical(0, -self.num1):
+        #            _seg1 = StripeSegment()
+        #            _dot = Dot(0, e_seg.get_vertical(0, -self.num1)[0])
+        #            _seg1.append(_dot)
+        #            _dot = Dot(0, e_seg.get_vertical(0, -self.num1)[1])
+        #            _seg1.append(_dot)
+        #            _dot = Dot(0, e_seg.get_vertical(0, -self.num1)[0])
+        #            _dot.move(-self.num3, 0)
+        #            _seg1.append(_dot)
+        #            _dot = Dot(0, e_seg.get_vertical(0, -self.num1)[1])
+        #            _dot.move(-self.num3, 0)
+        #            _seg1.append(_dot)
+        #            provis_result.append(_seg1)
+
+        #        # メインの左上(上に作ってから鏡映)
+        #        if e_seg.have_horizon(0, -self.num2):
+        #            _seg2 = StripeSegment()
+        #            _dot = Dot(e_seg.get_horizon(0, -self.num2)[0], 0)
+        #            _seg2.append(_dot)
+        #            _dot = Dot(e_seg.get_horizon(0, -self.num2)[1], 0)
+        #            _seg2.append(_dot)
+        #            _dot = Dot(e_seg.get_horizon(0, -self.num2)[0], 0)
+        #            _dot.move(0, self.num3)
+        #            _seg2.append(_dot)
+        #            _dot = Dot(e_seg.get_horizon(0, -self.num2)[1], 0)
+        #            _dot.move(0, self.num3)
+        #            _seg2.append(_dot)
+        #            provis_result.append(_seg2.reflect(
+        #                Dot(-self.num3 / 2, 0), Dot(-self.num3 / 2, self.num2)))
+
+        #        # メインの右
+        #        if e_seg.have_vertical(self.num2, -self.num1):
+        #            _seg3 = StripeSegment()
+        #            _dot = Dot(self.num2, e_seg.get_vertical(
+        #                self.num2, -self.num1)[0])
+        #            _seg3.append(_dot)
+        #            _dot = Dot(self.num2, e_seg.get_vertical(
+        #                self.num2, -self.num1)[1])
+        #            _seg3.append(_dot)
+        #            _dot = Dot(self.num2, e_seg.get_vertical(
+        #                self.num2, -self.num1)[0])
+        #            _dot.move(self.num3, 0)
+        #            _seg3.append(_dot)
+        #            _dot = Dot(self.num2, e_seg.get_vertical(
+        #                self.num2, -self.num1)[1])
+        #            _dot.move(self.num3, 0)
+        #            _seg3.append(_dot)
+        #            provis_result.append(_seg3)
+
+        #        # メインの下
+        #        if e_seg.have_horizon(-self.num1, -self.num2):
+        #            _seg4 = StripeSegment()
+        #            _dot = Dot(e_seg.get_horizon(-self.num1, -
+        #                                         self.num2)[0], -self.num1)
+        #            _seg4.append(_dot)
+        #            _dot = Dot(e_seg.get_horizon(-self.num1, -
+        #                                         self.num2)[1], -self.num1)
+        #            _seg4.append(_dot)
+        #            _dot = Dot(e_seg.get_horizon(-self.num1, -
+        #                                         self.num2)[0], -self.num1)
+        #            _dot.move(0, -self.num3)
+        #            _seg4.append(_dot)
+        #            _dot = Dot(e_seg.get_horizon(-self.num1, -
+        #                                         self.num2)[1], -self.num1)
+        #            _dot.move(0, -self.num3)
+        #            _seg4.append(_dot)
+        #            provis_result.append(_seg4)
+
+        #    for e_dot in provis_result:
+        #        e_stripe.append(e_dot)
+        #    provis_result.clear()
+
+        for e_dot in self.dots_to_render:
+            pass
+            #e_dot.rot(0, 0, theta1)
+            #e_dot.move(w, h)
+            # g.plot(e_dot.x, e_dot.y, marker='*')
+
+        for e_stripe in self.all_stripe:
+            print("STRIPE:have color")
+            # print(e_stripe.r,e_stripe.g,e_stripe.b)
+            for e_dots in e_stripe.get():
+                e_dots.sort()
+                # print("STRIPESEGMENT:have", e_dots.len(), "dots")
+                for e_dot in e_dots.get():
+                    pass
+                    #e_dot.move(self.num2 + self.num3, 0)
+                    #e_dot.rot(0, 0, theta1)
+                    #e_dot.move(w, h)
+                    ##g.plot(e_dot.x, e_dot.y, marker='o', color=[e_stripe.r / 255, e_stripe.g / 255, e_stripe.b / 255])
 
 
 if __name__ == '__main__':
