@@ -10,7 +10,7 @@ from PyQt5.QtWidgets import (QWidget, QHBoxLayout,
 from PyQt5.QtGui import QPixmap, QIcon, QImage, QPainter, QFont, QColor, QPolygonF, QPen
 from PyQt5.QtSvg import *
 import cv2
-from PIL import Image
+from PIL import Image, ImageDraw
 from PIL.ImageQt import ImageQt
 import matplotlib.pyplot as plt
 import numpy as np
@@ -70,22 +70,44 @@ class Example(QWidget):
         qim = ImageQt(canvas)
         pixmap01 = QPixmap.fromImage(qim)
         lbl.setPixmap(pixmap01)
-        self.imageArea.addWidget(lbl)
+        #self.imageArea.addWidget(lbl)
 
     def giftbox_render(self):
         gift_b = GiftBox(self.A, self.B, self.C)
         #gift_b.render(self.theta / 180 * np.pi)
-        gift_b.draw_stripe(10, 10, 5, self.theta / 180 * np.pi, 45 / 180 * np.pi)
+        gift_b.draw_continuous_picture(10, 10, 5, self.theta / 180 * np.pi, 45 / 180 * np.pi)
         self.create_mask_svg(self.A, self.B, self.C, 10, 10, 10, 45 / 180 * np.pi, 45 / 180 * np.pi)
         #gift = gift_b.dots_to_render
         gift = gift_b.all_stripe
         #print(len(gift))
+
+        o_pattern = Image.open('./pictures/sample.png')
+        pattern = o_pattern.resize((10, int(10 * o_pattern.width / o_pattern.height)))
+        icount = 10 
+        main_canvas = Image.new('RGBA', (self.B, self.A), (200, 200, 200))
+        draw = ImageDraw.Draw(main_canvas)
         for stripe in gift:
             for seg in stripe.get():
+                a = seg.get()
+                border = Image.new('RGBA', (pattern.width * icount, pattern.height), (200, 200, 200))
+                for i in range(5):
+                    border.paste(pattern, (pattern.width * i, 0))
+                #border = border.rotate(45, center=(0, pattern.height))
+                ##main_canvas.paste(border, (int(a[0].x), int(a[0].y + self.A)))
                 #print(len(seg.get()))
+                #for i, dot in enumerate(seg.get()):
                 for dot in seg.get():
-                    plt.plot(dot.x, dot.y, color=[stripe.r / 255, stripe.g / 255, stripe.b / 255], marker='.', markersize=15)
+                    draw.ellipse((dot.x, -dot.y, dot.x + 3, -dot.y + 3), fill=(stripe.r, stripe.g, stripe.b), outline=(0,0,0))
+                    #plt.plot(dot.x, dot.y, color=[stripe.r / 255, stripe.g / 255, stripe.b / 255], marker='.', markersize=15)
+                    
+                break
 
+        lbl = QLabel(self)
+        main_canvas = main_canvas.resize((int(self.B * 4), int(self.A * 4)))
+        qim = ImageQt(main_canvas)
+        pixmap01 = QPixmap.fromImage(qim)
+        lbl.setPixmap(pixmap01)
+        self.imageArea.addWidget(lbl)
         ax = plt.gca()
         ax.set_aspect(1)
         plt.show(block=False)
@@ -183,6 +205,6 @@ class Example(QWidget):
 
         painter.end()
 
-        drawing = svg2rlg("./.tmp/output_render_wrap.svg")
-        renderPM.drawToFile(drawing, "./.tmp/mask.png", fmt="PNG")
+        mask = svg2rlg("./.tmp/output_render_wrap.svg")
+        renderPM.drawToFile(mask, "./.tmp/mask.png", fmt="PNG")
 
