@@ -68,14 +68,15 @@ class Example(QWidget):
         #im1.show()
         canvas = canvas.resize((int(im1.width * W * rscale), int(im1.height * H * rscale)))
         qim = ImageQt(canvas)
-        pixmap01 = QPixmap.fromImage(qim)
-        lbl.setPixmap(pixmap01)
+        #pixmap01 = QPixmap.fromImage(qim)
+        #lbl.setPixmap(pixmap01)
         #self.imageArea.addWidget(lbl)
 
     def giftbox_render(self):
         gift_b = GiftBox(self.A, self.B, self.C)
         #gift_b.render(self.theta / 180 * np.pi)
-        gift_b.draw_continuous_picture(10, 10, 5, self.theta / 180 * np.pi, 45 / 180 * np.pi)
+        b_w = 10
+        gift_b.draw_continuous_picture(b_w, 10, 5, self.theta / 180 * np.pi, 45 / 180 * np.pi)
         self.create_mask_svg(self.A, self.B, self.C, 10, 10, 10, 45 / 180 * np.pi, 45 / 180 * np.pi)
         #gift = gift_b.dots_to_render
         gift = gift_b.all_stripe
@@ -83,17 +84,25 @@ class Example(QWidget):
 
         o_pattern = Image.open('./pictures/sample.png')
         pattern = o_pattern.resize((10, int(10 * o_pattern.width / o_pattern.height)))
-        icount = 10 
+        icount = 15
         main_canvas = Image.new('RGBA', (self.B, self.A), (200, 200, 200))
         draw = ImageDraw.Draw(main_canvas)
         for stripe in gift:
             for seg in stripe.get():
                 a = seg.get()
-                border = Image.new('RGBA', (pattern.width * icount, pattern.height), (200, 200, 200))
-                for i in range(5):
+                border = Image.new('RGBA', (pattern.width * icount, pattern.height), (0, 0, 0))
+                for i in range(icount):
                     border.paste(pattern, (pattern.width * i, 0))
-                #border = border.rotate(45, center=(0, pattern.height))
-                ##main_canvas.paste(border, (int(a[0].x), int(a[0].y + self.A)))
+                border_w = border.rotate(45, center=(0, pattern.height), expand=1)
+                a_border = Image.new('RGBA', (border_w.width, border_w.height))
+                for x in range(border_w.width):
+                    for y in range(border_w.height):
+                        pixel = border_w.getpixel((x, y))
+                        if pixel != 255 or pixel != 255 or pixel != 255:
+                            a_border.putpixel((x, y), pixel)
+
+                print(border.width, border.height)
+                main_canvas.paste(a_border, (int(b_w * -np.sin(45 / 180 * np.pi), int(-a[0].y)))
                 #print(len(seg.get()))
                 #for i, dot in enumerate(seg.get()):
                 for dot in seg.get():
@@ -110,7 +119,7 @@ class Example(QWidget):
         self.imageArea.addWidget(lbl)
         ax = plt.gca()
         ax.set_aspect(1)
-        plt.show(block=False)
+        #plt.show(block=False)
 
     def create_mask_svg(self, vertical, horizon, high, s, u, offset, b2s_angle, b_angle):
         vertical = float(vertical)
