@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-
+import time
 import sys
 import numpy as np
 from PyQt5.QtCore import *
@@ -76,40 +76,67 @@ class Example(QWidget):
         gift_b = GiftBox(self.A, self.B, self.C)
         #gift_b.render(self.theta / 180 * np.pi)
         b_w = 10
-        gift_b.draw_continuous_picture(b_w, 10, 5, self.theta / 180 * np.pi, 45 / 180 * np.pi)
-        self.create_mask_svg(self.A, self.B, self.C, 10, 10, 10, 45 / 180 * np.pi, 45 / 180 * np.pi)
+        stripe_angle = 45
+        gift_b.draw_continuous_picture(b_w, 10, 5, self.theta / 180 * np.pi, stripe_angle / 180 * np.pi)
+        self.create_mask_svg(self.A, self.B, self.C, 10, 10, 10, stripe_angle / 180 * np.pi, 45 / 180 * np.pi)
         #gift = gift_b.dots_to_render
         gift = gift_b.all_stripe
         #print(len(gift))
-
-        o_pattern = Image.open('./pictures/sample.png')
-        pattern = o_pattern.resize((10, int(10 * o_pattern.width / o_pattern.height)))
-        icount = 15
+        
+        # load pattern piece
+        o_pattern = Image.open('./pictures/sample2.png')
+        pattern = o_pattern.resize((b_w, int(b_w * o_pattern.width / o_pattern.height)))
+        icount = 30
         main_canvas = Image.new('RGBA', (self.B, self.A), (200, 200, 200))
         draw = ImageDraw.Draw(main_canvas)
-        for stripe in gift:
+        for index, stripe in enumerate(gift):
             for seg in stripe.get():
                 a = seg.get()
-                border = Image.new('RGBA', (pattern.width * icount, pattern.height), (0, 0, 0))
+                border = Image.new('RGBA', (pattern.width * icount, pattern.height), (0, 0, 0, 0))
                 for i in range(icount):
                     border.paste(pattern, (pattern.width * i, 0))
-                border_w = border.rotate(45, center=(0, pattern.height), expand=1)
-                a_border = Image.new('RGBA', (border_w.width, border_w.height))
+                border_w = border.rotate(stripe_angle, expand=True, fillcolor=(255, 255, 255))
+
+                # trimming border image
+                if index == 0:
+                    x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi))
+                    y_start = -int(border_w.height - (-a[0].y))
+                elif -a[1].y != self.A:
+                    #print("aaa")
+                    x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi))
+                    y_start = -int(border_w.height - (-a[1].y))
+                else:
+                    #print("iii")
+                    x_start = int(a[0].x)
+                    y_start = self.A - int(border_w.height - (b_w * np.cos(stripe_angle)))
+                
+                #print(x_start, y_start, border_w.width, border_w.height)
                 for x in range(border_w.width):
                     for y in range(border_w.height):
-                        pixel = border_w.getpixel((x, y))
-                        if pixel != 255 or pixel != 255 or pixel != 255:
-                            a_border.putpixel((x, y), pixel)
-
-                print(border.width, border.height)
-                main_canvas.paste(a_border, (int(b_w * -np.sin(45 / 180 * np.pi), int(-a[0].y)))
-                #print(len(seg.get()))
-                #for i, dot in enumerate(seg.get()):
+                        if (0 <= x_start + x and x_start + x < self.B) and (0 <= y_start + y and y_start + y < self.A):
+                        #if (x_start + x < self.B) and (y_start + y < self.A):
+                            pixel = border_w.getpixel((x, y))
+                            if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
+                                try:
+                                    main_canvas.putpixel((x_start + x, y_start + y), pixel)
+                                except:
+                                    print(sys.exc_info()[0])
+                                    print(x_start + x, y_start + y)
+                                    exit()
+                                #pass
+                
+                i = 0  ## debug
                 for dot in seg.get():
-                    draw.ellipse((dot.x, -dot.y, dot.x + 3, -dot.y + 3), fill=(stripe.r, stripe.g, stripe.b), outline=(0,0,0))
+                    #print(dot.x, dot.y)
+                    if i == 1:
+                        draw.ellipse((dot.x -2, -dot.y-2, dot.x + 2, -dot.y + 2), fill=(255, 0, 255), outline=(0,0,0))
+                    else:
+                        draw.ellipse((dot.x -2, -dot.y-2, dot.x + 2, -dot.y + 2), fill=(stripe.r, stripe.g, stripe.b), outline=(0,0,0))
                     #plt.plot(dot.x, dot.y, color=[stripe.r / 255, stripe.g / 255, stripe.b / 255], marker='.', markersize=15)
+                    i += 1
                     
                 break
+            #break
 
         lbl = QLabel(self)
         main_canvas = main_canvas.resize((int(self.B * 4), int(self.A * 4)))

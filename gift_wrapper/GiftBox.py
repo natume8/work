@@ -478,11 +478,11 @@ class GiftBox:
                     # g.plot(e_dot.x, e_dot.y, marker='o', color=[e_stripe.r / 255, e_stripe.g / 255, e_stripe.b / 255])
 
     def draw_continuous_picture(self, s, u, offset, b2s_angle, b_angle):
-        line_w = 10
-        interval_w = 10
-        offset = 10
-        theta2 = 45
-        theta1 = 45
+        line_w = s
+        interval_w = u
+        offset = offset
+        theta2 = b2s_angle
+        theta1 = b_angle
         # define boundary condition
         p = 2 * self.num1 - 2 * self.num2 * \
             np.tan(theta1) + (1 - np.tan(theta1)) * self.num3 + self.beta
