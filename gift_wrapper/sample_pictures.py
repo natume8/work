@@ -86,30 +86,31 @@ class Example(QWidget):
         # load pattern piece
         o_pattern = Image.open('./pictures/sample2.png')
         pattern = o_pattern.resize((b_w, int(b_w * o_pattern.width / o_pattern.height)))
-        icount = 30
         main_canvas = Image.new('RGBA', (self.B, self.A), (200, 200, 200))
         draw = ImageDraw.Draw(main_canvas)
+
         for index, stripe in enumerate(gift):
-            for seg in stripe.get():
+            for s_index, seg in enumerate(stripe.get()):
+                icount = 30
                 a = seg.get()
+
+                print(a)
                 border = Image.new('RGBA', (pattern.width * icount, pattern.height), (0, 0, 0, 0))
                 for i in range(icount):
                     border.paste(pattern, (pattern.width * i, 0))
                 border_w = border.rotate(stripe_angle, expand=True, fillcolor=(255, 255, 255))
 
-                # trimming border image
+                # triÎkmming border image
                 if index == 0:
                     x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi))
                     y_start = -int(border_w.height - (-a[0].y))
                 elif -a[1].y != self.A:
-                    #print("aaa")
                     x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi))
                     y_start = -int(border_w.height - (-a[1].y))
                 else:
-                    #print("iii")
                     x_start = int(a[0].x)
                     y_start = self.A - int(border_w.height - (b_w * np.cos(stripe_angle)))
-                
+                 
                 #print(x_start, y_start, border_w.width, border_w.height)
                 for x in range(border_w.width):
                     for y in range(border_w.height):
@@ -132,10 +133,9 @@ class Example(QWidget):
                         draw.ellipse((dot.x -2, -dot.y-2, dot.x + 2, -dot.y + 2), fill=(255, 0, 255), outline=(0,0,0))
                     else:
                         draw.ellipse((dot.x -2, -dot.y-2, dot.x + 2, -dot.y + 2), fill=(stripe.r, stripe.g, stripe.b), outline=(0,0,0))
-                    #plt.plot(dot.x, dot.y, color=[stripe.r / 255, stripe.g / 255, stripe.b / 255], marker='.', markersize=15)
+                    plt.plot(dot.x, dot.y, color=[stripe.r / 255, stripe.g / 255, stripe.b / 255], marker='.', markersize=15)
                     i += 1
-                    
-                break
+                #break
             #break
 
         lbl = QLabel(self)
@@ -146,7 +146,7 @@ class Example(QWidget):
         self.imageArea.addWidget(lbl)
         ax = plt.gca()
         ax.set_aspect(1)
-        #plt.show(block=False)
+        plt.show(block=False)
 
     def create_mask_svg(self, vertical, horizon, high, s, u, offset, b2s_angle, b_angle):
         vertical = float(vertical)
