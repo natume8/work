@@ -677,7 +677,7 @@ class GiftBox:
             # g.plot(e_dot.x, e_dot.y, marker='*')
 
         for e_stripe in self.all_stripe:
-            print("STRIPE:have color")
+            #print("STRIPE:have color")
             # print(e_stripe.r,e_stripe.g,e_stripe.b)
             for e_dots in e_stripe.get():
                 e_dots.sort()
