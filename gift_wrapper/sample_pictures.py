@@ -3,6 +3,7 @@
 
 import time
 import sys
+import math
 import numpy as np
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import (QWidget, QHBoxLayout,
@@ -25,6 +26,11 @@ from .InputStripeDetail import parameters
 
 DPI = 72
 
+
+def p_dist(dot1, dot2):
+    return math.sqrt((dot1.x - dot2.x) ** 2 + (dot1.y - dot2.y) ** 2)        
+
+
 class Example(QWidget):
 
     def __init__(self):
@@ -45,32 +51,9 @@ class Example(QWidget):
 
         # ラベルを作ってその中に画像を置く
         self.setLayout(self.imageArea)
-        self.move(300, 200)
+        self.move(300, 50)
         self.setWindowTitle('Imoyokan')
         self.show()
-
-    def gazou(self):
-        H = 2
-        W = 6
-        rscale = 0.3
-
-        lbl = QLabel(self)
-        im1 = Image.open('./pictures/sample.png')
-        canvas = Image.new('RGBA', (im1.width * W, im1.height * H), (100, 100, 100))
-        for h in range(H):
-            row = Image.new('RGBA', (im1.width * W, im1.height), (60, 60, 60))
-            for w in range(W):
-                row.paste(im1, (im1.width * w, 0))
-            canvas.paste(row, (0, im1.height * h))
-        #im = im.rotate(45, expand=True)
-        #canvas = canvas.rotate(30.5, expand=True)
-        #canvas.show()
-        #im1.show()
-        canvas = canvas.resize((int(im1.width * W * rscale), int(im1.height * H * rscale)))
-        qim = ImageQt(canvas)
-        #pixmap01 = QPixmap.fromImage(qim)
-        #lbl.setPixmap(pixmap01)
-        #self.imageArea.addWidget(lbl)
 
     def giftbox_render(self):
         gift_b = GiftBox(self.A, self.B, self.C)
@@ -117,9 +100,13 @@ class Example(QWidget):
 
         for index, stripe in enumerate(gift):
             seg = stripe.get()[0]
-            icount = 30
             seg_dots = seg.get()
-
+            if index == 0:
+                dot1, dot2 = [seg_dots[0], seg_dots[1]] if p_dist(seg_dots[0], seg_dots[1]) > p_dist(seg_dots[2], seg_dots[3]) else [seg_dots[2], seg_dots[3]]
+            else:
+                dot1, dot2 = [seg_dots[1], seg_dots[2]] if p_dist(seg_dots[1], seg_dots[2]) > p_dist(seg_dots[0], seg_dots[3]) else [seg_dots[0], seg_dots[3]]
+            #icount = 30
+            icount = int(p_dist(dot1, dot2) // pattern.width + 2)
             #print(seg_dots)
             border = Image.new('RGBA', (pattern.width * icount, pattern.height), (0, 0, 0, 0))
             for i in range(icount):
@@ -330,36 +317,42 @@ class Example(QWidget):
                 i += 1
             #break
             #break
+        net_left_i = Image.new('RGBA', (int(self.B + self.C / 2), int(self.A + self.C)), (200, 200, 200, 0))
+        net_bottom_i = Image.new('RGBA', (int(self.B), int(self.A + self.C / 2)), (200, 200, 200, 0))
+        net_right_i = Image.new('RGBA', (int(self.B + self.C / 2), int(self.A)), (200, 200, 200, 0))
         
-        # center
+        net_left_i.paste(top_s.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.FLIP_TOP_BOTTOM), (0, 0), top_s.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.FLIP_TOP_BOTTOM).split()[3])
+        net_left_i.paste(top_s.transpose(Image.FLIP_LEFT_RIGHT), (0, int(self.C / 2)), top_s.transpose(Image.FLIP_LEFT_RIGHT).split()[3])
+        net_left_i.paste(main_s.transpose(Image.FLIP_LEFT_RIGHT), (0, int(self.C)), main_s.transpose(Image.FLIP_LEFT_RIGHT).split()[3])
+        net_left_i.paste(left_s.transpose(Image.FLIP_LEFT_RIGHT), (int(self.B), int(self.C)), left_s.transpose(Image.FLIP_LEFT_RIGHT).split()[3])
+
+        net_bottom_i.paste(bottom_s.transpose(Image.FLIP_TOP_BOTTOM), (0, 0), bottom_s.transpose(Image.FLIP_TOP_BOTTOM).split()[3])
+        net_bottom_i.paste(main_s.transpose(Image.FLIP_TOP_BOTTOM), (0, int(self.C / 2)), main_s.transpose(Image.FLIP_TOP_BOTTOM).split()[3])
+
+        net_right_i.paste(right_s.transpose(Image.FLIP_LEFT_RIGHT), (0, 0), right_s.transpose(Image.FLIP_LEFT_RIGHT).split()[3])
+        net_right_i.paste(main_s.transpose(Image.FLIP_LEFT_RIGHT), (int(self.C / 2), 0), main_s.transpose(Image.FLIP_LEFT_RIGHT).split()[3])
+
         net_image.paste(net_center_i, 
                 (int(self.B + self.C / 2), int(self.C / 2)), 
                 net_center_i.split()[3])
-        net_image.paste(net_center_i, 
-                (int(self.B + self.C / 2), int(self.C / 2)), 
-                net_center_i.split()[3])
-        net_image.paste(net_center_i, 
-                (int(self.B + self.C / 2), int(self.C / 2)), 
-                net_center_i.split()[3])
-        net_image.paste(net_center_i, 
-                (int(self.B + self.C / 2), int(self.C / 2)), 
-                net_center_i.split()[3])
-        net_image.paste(net_center_i, 
-                (int(self.B + self.C / 2), int(self.C / 2)), 
-                net_center_i.split()[3])
-        net_image.paste(net_center_i, 
-                (int(self.B + self.C / 2), int(self.C / 2)), 
-                net_center_i.split()[3])
-        net_image.paste(net_center_i, 
-                (int(self.B + self.C / 2), int(self.C / 2)), 
-                net_center_i.split()[3])
-        net_image.paste(net_center_i, 
-                (int(self.B + self.C / 2), int(self.C / 2)), 
-                net_center_i.split()[3])
-        
+        net_image.paste(net_left_i, 
+                (0, 0), 
+                net_left_i.split()[3])
+        net_image.paste(net_bottom_i, 
+                (int(self.B + self.C), int(self.A + self.C * 3 / 2)), 
+                net_bottom_i.split()[3])
+        net_image.paste(net_right_i, 
+                (int(self.B * 2 + self.C * 3 / 2), int(self.C)), 
+                net_right_i.split()[3])
+
+        paper_w, paper_h = gift_b.get_valid_paper_size(self.theta / 180 * np.pi)
+        paper = Image.new('RGBA', (paper_w, paper_h), (200, 200, 200, 0))
+        self.rotate_paper(net_image, paper, self.theta)
+                
         lbl = QLabel(self)
-        net_image = net_image.resize((int(self.B * 1), int(self.A * 1)))
-        qim = ImageQt(net_image)
+        #net_image = net_image.resize((int(self.B * 2), int(self.A * 2)))
+        net_image = net_image.resize((int((self.B * 3 + self.C * 2) * 0.8), int((self.A * 2 + self.C * 2) * 0.8)))
+        qim = ImageQt(paper)
         pixmap01 = QPixmap.fromImage(qim)
         lbl.setPixmap(pixmap01)
         self.imageArea.addWidget(lbl)
@@ -367,6 +360,15 @@ class Example(QWidget):
         ax.set_aspect(1)
         #plt.show(block=False)
         #net_center_i.show()
+
+    def rotate_paper(self, net_image, paper, theta1):
+        beta = self.C / 2
+	p = 2 * self.A - 2 * self.B * np.tan(theta1) + (1 - np.tan(theta1)) * self.C + beta
+        q = p - self.C * np.tan(theta1)
+        l2 = q / 2
+        w = (l2 + self.C) * np.sin(theta1)
+        h = p * np.cos(theta1)
+        ############# paper rotation  
 
     def state_segment(self, dots):
         seg = {"top": False, "bottom": False, "left": False, "right": False}
@@ -397,99 +399,4 @@ class Example(QWidget):
              
         return seg
 
-    def create_mask_svg(self, vertical, horizon, high, s, u, offset, b2s_angle, b_angle):
-        vertical = float(vertical)
-        horizon = float(horizon)
-        high = float(high)
-        s = float(s)
-        u = float(u)
-        offset = float(offset)
-        g_box = GiftBox(vertical, horizon, high)
-        g_box.draw_continuous_picture(s, u, offset, b2s_angle, b_angle)
-        colors = None #parameters.color_set
-        minimum_p_s = g_box.get_valid_paper_size(b_angle)  # (w, h)
-        w = MAX_HORIZON
-        h = MAX_VERTICAL
-        if h / w < minimum_p_s[1] / minimum_p_s[0]:
-            render_paper = [minimum_p_s[0] * (h / minimum_p_s[1]), h]
-        else:
-            render_paper = [w, minimum_p_s[1] * (w / minimum_p_s[0])]
-        svg_gen = QSvgGenerator()
-        svg_gen.setFileName("./.tmp/output_render_wrap.svg")
-        svg_gen.setSize(QSize(render_paper[0] + 500, render_paper[1] + 500))
-        svg_gen.setViewBox(QRect(0, 0, render_paper[0] + 500, render_paper[1] + 500))
-        painter = QPainter()
-        painter.begin(svg_gen)
-        pen = QPen(QColor(0, 0, 255))
-
-        pen.setWidth(2)
-
-        box_corners = g_box.dots_to_render  
-        g_box_stripe = g_box.all_stripe
-        dots_list = []
-
-        painter.setPen(pen)
-        sg = QPolygonF()
-        c_i = 0
-        for unit_stripe_shape in g_box_stripe:
-            for unit_stripe_seg in unit_stripe_shape.get():
-                s_p = []
-                for s_point in unit_stripe_seg.get():
-                    # 左右反転用
-                    # sp = QPointF(s_point.x * (render_paper[1] / minimum_p_s[1]),
-                    sp = QPointF(-s_point.x * (render_paper[1] / minimum_p_s[1]) + render_paper[0],
-                                 -s_point.y * (render_paper[1] / minimum_p_s[1]) + render_paper[1])
-                    s_p.append(sp)
-                sg = QPolygonF(s_p)
-                pen = QPen(Qt.NoPen)
-                if not colors:
-                    painter.setBrush(QColor(0, 0, 0))
-                else:
-                    painter.setBrush(QColor(colors[c_i]))
-                painter.setPen(pen)
-                # 図形の描画
-                painter.drawPolygon(sg, len(sg))
-                painter.setBrush(Qt.NoBrush)
-            if colors:
-                c_i = (c_i + 1) % len(colors)
-
-        pen_2 = QPen(QColor(144, 238, 144))
-        pen_2.setWidth(1)
-        painter.setPen(pen_2)
-        painter.drawRect(0, 0, render_paper[0], render_paper[1])
-
-        pen_3 = QPen(QColor(0, 0, 0))
-        pen_3.setWidth(1)
-        painter.setPen(pen_3)
-
-        for c_point in box_corners:
-            # 左右反転用
-            # dots_list.append(QPointF(c_point.x * (render_paper[1] / minimum_p_s[1]),
-            dots_list.append(QPointF(-c_point.x * (render_paper[1] / minimum_p_s[1]) + render_paper[0],
-                                     -c_point.y * (render_paper[1] / minimum_p_s[1]) + render_paper[1]))
-        # 以下，展開図描画
-        painter.drawLine(dots_list[0], dots_list[1])
-        painter.drawLine(dots_list[1], dots_list[2])
-        painter.drawLine(dots_list[2], dots_list[3])
-        painter.drawLine(dots_list[3], dots_list[0])
-        painter.drawLine(dots_list[0], dots_list[5])
-        painter.drawLine(dots_list[4], dots_list[5])
-        painter.drawLine(dots_list[4], dots_list[3])
-        painter.drawLine(dots_list[3], dots_list[9])
-        painter.drawLine(dots_list[4], dots_list[8])
-        painter.drawLine(dots_list[9], dots_list[8])
-        painter.drawLine(dots_list[9], dots_list[6])
-        painter.drawLine(dots_list[6], dots_list[7])
-        painter.drawLine(dots_list[7], dots_list[8])
-        painter.drawLine(dots_list[8], dots_list[11])
-        painter.drawLine(dots_list[11], dots_list[10])
-        painter.drawLine(dots_list[10], dots_list[7])
-        painter.drawLine(dots_list[6], dots_list[12])
-        painter.drawLine(dots_list[12], dots_list[13])
-        painter.drawLine(dots_list[13], dots_list[7])
-
-        painter.end()
-
-        mask = svg2rlg("./.tmp/output_render_wrap.svg")
-        renderPM.drawToFile(mask, "./.tmp/mask.png", fmt="PNG")
 
