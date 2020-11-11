@@ -346,7 +346,7 @@ class Example(QWidget):
                 net_right_i.split()[3])
 
         paper_w, paper_h = gift_b.get_valid_paper_size(self.theta / 180 * np.pi)
-        paper = Image.new('RGBA', (paper_w, paper_h), (200, 200, 200, 0))
+        paper = Image.new('RGBA', (int(paper_w), int(paper_h)), (200, 200, 200, 0))
         self.rotate_paper(net_image, paper, self.theta)
                 
         lbl = QLabel(self)
@@ -362,13 +362,48 @@ class Example(QWidget):
         #net_center_i.show()
 
     def rotate_paper(self, net_image, paper, theta1):
+        theta_np = theta1 / 180 * np.pi
         beta = self.C / 2
-	p = 2 * self.A - 2 * self.B * np.tan(theta1) + (1 - np.tan(theta1)) * self.C + beta
-        q = p - self.C * np.tan(theta1)
+        p = 2 * self.A - 2 * self.B * np.tan(theta_np) + (1 - np.tan(theta_np)) * self.C + beta
+        q = p - self.C * np.tan(theta_np)
         l2 = q / 2
-        w = (l2 + self.C) * np.sin(theta1)
-        h = p * np.cos(theta1)
-        ############# paper rotation  
+        w = (l2 + self.C) * np.sin(theta_np)
+        h = p * np.cos(theta_np)
+        ############# paper rotation
+        top_left = Dot(
+                -(np.cos(theta_np) * (self.A - self.B / 2 + self.C) + np.sin(theta_np) * (self.A + self.C)) + self.B / 2,
+                -np.sin(theta_np) * (self.A - self.B / 2 + self.C) + np.cos(theta_np) * (self.A + self.C) + self.A
+                )
+        t_origin = Dot(
+                -self.B / 2 * np.cos(theta_np) - (self.A + self.C) * np.sin(theta_np) + self.B / 2,
+                -self.B / 2 * np.sin(theta_np) + (self.A + self.C) * np.cos(theta_np) - (self.A + self.C)
+                )
+
+        r_image = net_image.rotate(theta1, expand=True)
+        r_image_o = Dot(
+                top_left.x - t_origin.x + w,
+                -(top_left.y - t_origin.y - net_image.width * np.sin(theta_np) + h) + paper.height
+                )
+        print(r_image_o.x, r_image_o.y)
+
+        draw = ImageDraw.Draw(paper)
+        draw.ellipse((int(r_image_o.x - 2), -int(r_image_o.y - 2), int(r_image_o.x + 2), -int(r_image_o.y + 2)), fill=(255, 0, 255), outline=(0,0,0))
+        draw.ellipse((int(r_image_o.x + r_image.width - 2), -int(r_image_o.y - 2), int(r_image_o.x + r_image.width + 2), -int(r_image_o.y + 2)), fill=(255, 0, 255), outline=(0,0,0))
+        
+        #paper.paste(r_image, (int(r_image_o.x), int(-r_image_o.y + paper.height)), r_image.split()[3])        
+        for x in range(r_image.width):
+            for y in range(r_image.height):
+                if 0 <= int(r_image_o.x) + x < paper.width and 0 <= int(r_image_o.y) + y < paper.height:
+                    pixel = r_image.getpixel((x, y))
+                    if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
+                        try:
+                            paper.putpixel((int(r_image_o.x) + x, int(r_image_o.y) + y), pixel)
+                        except:
+                            print(sys.exc_info()[0])
+                            print(paper.width, paper.height)
+                            print(r_image_o.x + x, r_image_o.y + y)
+                            exit()
+
 
     def state_segment(self, dots):
         seg = {"top": False, "bottom": False, "left": False, "right": False}
