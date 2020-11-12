@@ -41,7 +41,7 @@ class Example(QWidget):
         self.A = int(150 * DPI / 25.4)
         self.B = int(120 * DPI / 25.4)
         self.C = int(30 * DPI / 25.4)
-        self.theta = 45
+        #self.theta = 45.5
         self.giftbox_render()
 
     def initUI(self):
@@ -58,6 +58,7 @@ class Example(QWidget):
     def giftbox_render(self):
         gift_b = GiftBox(self.A, self.B, self.C)
         #gift_b.render(self.theta / 180 * np.pi)
+        self.theta = gift_b.get_optimal_theta()
         b_w = int(10 * DPI / 25.4)
         stripe_angle = 45
         b_interval = int(10 * DPI / 25.4)
@@ -352,12 +353,14 @@ class Example(QWidget):
         lbl = QLabel(self)
         #net_image = net_image.resize((int(self.B * 2), int(self.A * 2)))
         net_image = net_image.resize((int((self.B * 3 + self.C * 2) * 0.8), int((self.A * 2 + self.C * 2) * 0.8)))
+        paper.save("sample_result.png")
         qim = ImageQt(paper)
+        #qim = ImageQt(net_image)
         pixmap01 = QPixmap.fromImage(qim)
         lbl.setPixmap(pixmap01)
         self.imageArea.addWidget(lbl)
-        ax = plt.gca()
-        ax.set_aspect(1)
+        #ax = plt.gca()
+        #ax.set_aspect(1)
         #plt.show(block=False)
         #net_center_i.show()
 
@@ -370,25 +373,31 @@ class Example(QWidget):
         w = (l2 + self.C) * np.sin(theta_np)
         h = p * np.cos(theta_np)
         ############# paper rotation
-        top_left = Dot(
-                -(np.cos(theta_np) * (self.A - self.B / 2 + self.C) + np.sin(theta_np) * (self.A + self.C)) + self.B / 2,
-                -np.sin(theta_np) * (self.A - self.B / 2 + self.C) + np.cos(theta_np) * (self.A + self.C) + self.A
-                )
-        t_origin = Dot(
-                -self.B / 2 * np.cos(theta_np) - (self.A + self.C) * np.sin(theta_np) + self.B / 2,
-                -self.B / 2 * np.sin(theta_np) + (self.A + self.C) * np.cos(theta_np) - (self.A + self.C)
-                )
+        default = np.array([[self.B * 3 / 2], [-self.A]])
+        rotate_a = np.array([[np.cos(theta_np), -np.sin(theta_np)], [np.sin(theta_np), np.cos(theta_np)]])
+
+        t_l = rotate_a * np.array([[0 - default[0, 0]], [self.C - default[1, 0]]]) + default
+        top_left = Dot(t_l[0, 0], t_l[1, 0])
+        t_o = rotate_a * np.array([[0 - default[0, 0]], [0 - default[1, 0]]]) + default
+        t_origin = Dot(t_o[0, 0], t_o[1, 0])
 
         r_image = net_image.rotate(theta1, expand=True)
         r_image_o = Dot(
                 top_left.x - t_origin.x + w,
-                -(top_left.y - t_origin.y - net_image.width * np.sin(theta_np) + h) + paper.height
+                -(top_left.y - t_origin.y + net_image.width * np.sin(theta_np) + h) + paper.height
                 )
-        print(r_image_o.x, r_image_o.y)
 
-        draw = ImageDraw.Draw(paper)
-        draw.ellipse((int(r_image_o.x - 2), -int(r_image_o.y - 2), int(r_image_o.x + 2), -int(r_image_o.y + 2)), fill=(255, 0, 255), outline=(0,0,0))
-        draw.ellipse((int(r_image_o.x + r_image.width - 2), -int(r_image_o.y - 2), int(r_image_o.x + r_image.width + 2), -int(r_image_o.y + 2)), fill=(255, 0, 255), outline=(0,0,0))
+        #draw = ImageDraw.Draw(paper)
+        #draw.ellipse((int(r_image_o.x - 2), -int(r_image_o.y - 2), int(r_image_o.x + 2), -int(r_image_o.y + 2)), fill=(255, 0, 255), outline=(0,0,0))
+        #draw.ellipse((int(r_image_o.x + r_image.width - 2), -int(r_image_o.y - 2), int(r_image_o.x + r_image.width + 2), -int(r_image_o.y + 2)), fill=(255, 0, 255), outline=(0,0,0))
+        #plt.plot(r_image_o.x, r_image_o.y, color='blue', marker='.', markersize=10)
+        #plt.plot(0, 0, color='red', marker='.', markersize=10)
+        #plt.plot(0, paper.height, color='red', marker='.', markersize=10)
+        #plt.plot(paper.width, paper.height, color='red', marker='.', markersize=10)
+        #plt.plot(paper.width, 0, color='red', marker='.', markersize=10)
+        #ax = plt.gca()
+        #ax.set_aspect(1)
+        #plt.show(block=False)
         
         #paper.paste(r_image, (int(r_image_o.x), int(-r_image_o.y + paper.height)), r_image.split()[3])        
         for x in range(r_image.width):
