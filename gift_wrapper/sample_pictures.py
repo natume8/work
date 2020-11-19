@@ -31,6 +31,13 @@ def p_dist(dot1, dot2):
     return math.sqrt((dot1.x - dot2.x) ** 2 + (dot1.y - dot2.y) ** 2)
 
 
+def dint(num):
+    if num * 10 % 10 < 5.0:
+        return int(num)
+    else:
+        return int(num) + 1
+
+
 class Example(QWidget):
 
     def __init__(self):
@@ -133,33 +140,33 @@ class Example(QWidget):
             border_w = border.rotate(
                 stripe_angle, expand=True, fillcolor=(255, 255, 255))
 
-            # -----create main surface-----
-            if index == 0:
-                x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi))
-                y_start = -int(border_w.height - (-seg_dots[0].y))
-            elif -seg_dots[1].y != self.A:
-                x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi))
-                y_start = -int(border_w.height - (-seg_dots[1].y))
-            else:
-                x_start = int(seg_dots[0].x)
-                y_start = self.A - \
-                    int(border_w.height - (b_w * np.cos(stripe_angle)))
+            ## -----create main surface-----
+            #if index == 0:
+            #    x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi))
+            #    y_start = -int(border_w.height - (-seg_dots[0].y))
+            #elif -seg_dots[1].y != self.A:
+            #    x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi))
+            #    y_start = -int(border_w.height - (-seg_dots[1].y))
+            #else:
+            #    x_start = int(seg_dots[0].x)
+            #    y_start = self.A - \
+            #        int(border_w.height - (b_w * np.cos(stripe_angle)))
 
-            #print(x_start, y_start, border_w.width, border_w.height)
-            for x in range(border_w.width):
-                for y in range(border_w.height):
-                    if (0 <= x_start + x and x_start + x < self.B) and (0 <= y_start + y and y_start + y < self.A):
-                        # if (x_start + x < self.B) and (y_start + y < self.A):
-                        pixel = border_w.getpixel((x, y))
-                        if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
-                            try:
-                                main_s.putpixel(
-                                    (x_start + x, y_start + y), pixel)
-                            except:
-                                print(sys.exc_info()[0])
-                                print(x_start + x, y_start + y)
-                                exit()
-                            # pass
+            ##print(x_start, y_start, border_w.width, border_w.height)
+            #for x in range(border_w.width):
+            #    for y in range(border_w.height):
+            #        if (0 <= x_start + x and x_start + x < self.B) and (0 <= y_start + y and y_start + y < self.A):
+            #            # if (x_start + x < self.B) and (y_start + y < self.A):
+            #            pixel = border_w.getpixel((x, y))
+            #            if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
+            #                try:
+            #                    main_s.putpixel(
+            #                        (x_start + x, y_start + y), pixel)
+            #                except:
+            #                    print(sys.exc_info()[0])
+            #                    print(x_start + x, y_start + y)
+            #                    exit()
+            #                # pass
 
             # -----create side surface-----
             t_side_seg = list()
@@ -331,15 +338,39 @@ class Example(QWidget):
                     right_s.paste(
                         side_b_r.crop((0, upper_p, side_b_r.width, side_b_r.height)), (0, int(r_side_seg[0].y)), side_b_r.crop((0, upper_p, side_b_r.width, side_b_r.height)).split()[3])
 
-            # -----create wrapping paper's parts-----
-            net_center_i.paste(
-                main_s, (int(self.C / 2), int(self.C / 2)), main_s.split()[3])
-            net_center_i.paste(top_s, (int(self.C / 2), 0), top_s.split()[3])
-            net_center_i.paste(
-                bottom_s, (int(self.C / 2), int(self.A + self.C / 2)), bottom_s.split()[3])
-            net_center_i.paste(left_s, (0, int(self.C / 2)), left_s.split()[3])
-            net_center_i.paste(
-                right_s, (int(self.B + self.C / 2), int(self.C / 2)), right_s.split()[3])
+            x_i = 1 / np.tan(stripe_angle / 180 * np.pi)
+            for w_count in range(int(pattern.width * np.sin(stripe_angle / 180 * np.pi) / 10)):
+            #for w_count in range(1):
+                # -----create main surface-----
+                if index == 0:
+                    x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi)) - dint(x_i * w_count)
+                    y_start = -int(border_w.height - (-seg_dots[0].y)) - w_count
+                elif -seg_dots[1].y != self.A:
+                    x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi)) - dint(x_i * w_count)
+                    y_start = -int(border_w.height - (-seg_dots[1].y)) - w_count
+                else:
+                    x_start = int(seg_dots[0].x) - dint(x_i * w_count)
+                    y_start = self.A - \
+                        int(border_w.height - (b_w * np.cos(stripe_angle))) - w_count
+
+                #print(x_start, y_start, border_w.width, border_w.height)
+                for x in range(border_w.width):
+                    for y in range(border_w.height):
+                        if (0 <= x_start + x and x_start + x < self.B) and (0 <= y_start + y and y_start + y < self.A):
+                            # if (x_start + x < self.B) and (y_start + y < self.A):
+                            pixel = border_w.getpixel((x, y))
+                            if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
+                                try:
+                                    main_s.putpixel(
+                                        (x_start + x, y_start + y), pixel)
+                                except:
+                                    print(sys.exc_info()[0])
+                                    print(x_start + x, y_start + y)
+                                    exit()
+                                # pass
+
+                #-----calcurate difference of pixel-----
+                ############
 
             # -----debug part-----
             i = 0
@@ -353,6 +384,17 @@ class Example(QWidget):
                 i += 1
             # break
             # break
+
+
+        # -----create wrapping paper's parts-----
+        net_center_i.paste(
+            main_s, (int(self.C / 2), int(self.C / 2)), main_s.split()[3])
+        net_center_i.paste(top_s, (int(self.C / 2), 0), top_s.split()[3])
+        net_center_i.paste(
+            bottom_s, (int(self.C / 2), int(self.A + self.C / 2)), bottom_s.split()[3])
+        net_center_i.paste(left_s, (0, int(self.C / 2)), left_s.split()[3])
+        net_center_i.paste(
+            right_s, (int(self.B + self.C / 2), int(self.C / 2)), right_s.split()[3])
 
         # -----create wrapping paper design-----
         net_left_i = Image.new(
@@ -407,8 +449,8 @@ class Example(QWidget):
         net_image = net_image.resize(
             (int((self.B * 3 + self.C * 2) * 0.8), int((self.A * 2 + self.C * 2) * 0.8)))
         paper.save("sample_result.png")
-        qim = ImageQt(paper)
-        #qim = ImageQt(net_image)
+        #qim = ImageQt(paper)
+        qim = ImageQt(net_image)
         pixmap01 = QPixmap.fromImage(qim)
         lbl.setPixmap(pixmap01)
         self.imageArea.addWidget(lbl)
@@ -487,3 +529,4 @@ class Example(QWidget):
                     seg["bottom"] = True
 
         return seg
+
