@@ -258,8 +258,17 @@ class Example(QWidget):
                     top_s.paste(
                         side_b_r, (int(t_side_seg[0].x), 0), side_b_r.split()[3])
             if b_side_seg != []:    # create bottom side
+                left_p = 0
+                if b_side_seg[1].x - b_side_seg[0].x < r_tb_p.height:
+                    if b_side_seg[0].x == 0 and b_side_seg[0].y == 0:
+                        left_p = r_tb_p.height - (b_side_seg[1].x - b_side_seg[0].x)
+                    elif b_side_seg[1].x == self.B and b_side_seg[1].y == 0:
+                        pass
+                    else:
+                        exit("error: side seg is wrong")
+                
                 if r_tb_p.width >= self.C / 2:
-                    p_b = r_tb_p.crop((0, 0, self.C / 2, r_tb_p.height))
+                    p_b = r_tb_p.crop((left_p, 0, self.C / 2, r_tb_p.height))
                     bottom_s.paste(p_b.transpose(Image.ROTATE_90),
                                    (int(b_side_seg[0].x), 0),
                                    p_b.transpose(Image.ROTATE_90).split()[3])
@@ -275,7 +284,8 @@ class Example(QWidget):
 
                     side_b_r = side_b.transpose(Image.ROTATE_90)
                     bottom_s.paste(
-                        side_b_r, (int(b_side_seg[0].x), 0), side_b_r.split()[3])
+                        side_b_r.crop((left_p, 0, side_b_r.width, side_b_r.height)), (int(b_side_seg[0].x), 0), side_b_r.crop((left_p, 0, side_b_r.width, side_b_r.height)).split()[3])
+
             if l_side_seg != []:    # create left side
                 drawl = ImageDraw.Draw(left_s)
                 if r_lr_p.width >= self.C / 2:
@@ -294,8 +304,16 @@ class Example(QWidget):
                     left_s.paste(
                         side_b, (0, int(l_side_seg[0].y)), side_b.split()[3])
             if r_side_seg != []:    # create right side
+                upper_p = 0
+                if r_side_seg[1].y - r_side_seg[0].y < r_lr_p.height:
+                    if r_side_seg[0].x == 0 and r_side_seg[0].y == 0:
+                        upper_p = r_lr_p.height - (r_side_seg[1].y - r_side_seg[0].y)
+                    elif r_side_seg[1].x == self.A and r_side_seg[1].y == 0:
+                        pass
+                    else:
+                        exit("error: side seg is wrong")
                 if r_lr_p.width >= self.C / 2:
-                    p_b = r_lr_p.crop((0, 0, self.C / 2, r_lr_p.height))
+                    p_b = r_lr_p.crop((0, upper_p, self.C / 2, r_lr_p.height))
                     right_s.paste(p_b.transpose(Image.ROTATE_180),
                                   (0, int(r_side_seg[0].y)),
                                   p_b.transpose(Image.ROTATE_180).split()[3])
@@ -311,7 +329,7 @@ class Example(QWidget):
 
                     side_b_r = side_b.transpose(Image.ROTATE_180)
                     right_s.paste(
-                        side_b_r, (0, int(r_side_seg[0].y)), side_b_r.split()[3])
+                        side_b_r.crop((0, upper_p, side_b_r.width, side_b_r.height)), (0, int(r_side_seg[0].y)), side_b_r.crop((0, upper_p, side_b_r.width, side_b_r.height)).split()[3])
 
             # -----create wrapping paper's parts-----
             net_center_i.paste(
