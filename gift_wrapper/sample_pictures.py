@@ -38,6 +38,13 @@ def dint(num):
         return int(num) + 1
 
 
+def calc_diff(pixels1, pixels2):
+    diff = 0
+    for pixel1, pixel2 in zip(pixels1, pixels2):  
+        diff += math.sqrt((pixel1[0] - pixel2[0]) ** 2) + math.sqrt((pixel1[1] - pixel2[1]) ** 2) + math.sqrt((pixel1[2] - pixel2[2]) ** 2)
+    return diff
+
+
 class Example(QWidget):
 
     def __init__(self):
@@ -66,7 +73,7 @@ class Example(QWidget):
         # -----define variable-----
         gift_b = GiftBox(self.A, self.B, self.C)
         self.theta = gift_b.get_optimal_theta()
-        b_w = int(10 * DPI / 25.4)
+        b_w = int(11 * DPI / 25.4)
         stripe_angle = 45
         b_interval = int(10 * DPI / 25.4)
         offset = int(5 * DPI / 25.4)
@@ -76,13 +83,16 @@ class Example(QWidget):
 
         # -----load pattern piece-----
         # separete pattern
-        o_pattern = Image.open('./pictures/sample2.png')
+        #o_pattern = Image.open('./pictures/sample2.png')
+        o_pattern = Image.open('./pictures/picture1.png')
         # contenius pattern
         #o_pattern = Image.open('./pictures/sample2.png')
 
         # -----shape patterns-----
         pattern = o_pattern.resize(
             (b_w, int(b_w * o_pattern.width / o_pattern.height)))
+        print(pattern.width, pattern.height)
+        # ## select side pattern's size
         side_lr_pattern = pattern.resize((int(b_w / np.cos(stripe_angle / 180 *
                                                            np.pi)),
                                           int(pattern.width * b_w / pattern.height / np.cos(stripe_angle /
@@ -91,10 +101,12 @@ class Example(QWidget):
                                                            np.pi)),
                                           int(pattern.width * b_w / pattern.height / np.sin(stripe_angle /
                                                                                             180 * np.pi))))
-        # side_lr_pattern = pattern.resize((int(b_w),
+        #side_lr_pattern = pattern.resize((int(b_w),
         #                                  int(pattern.width * b_w / pattern.height)))
-        # side_tb_pattern = pattern.resize((int(b_w),
+        #side_tb_pattern = pattern.resize((int(b_w),
         #                                  int(pattern.width * b_w / pattern.height)))
+        s_lr_h = side_lr_pattern.height
+        s_tb_h = side_tb_pattern.height
 
         r_lr_p = side_lr_pattern.crop((side_lr_pattern.width / 2, 0,
                                        side_lr_pattern.width, side_lr_pattern.height))
@@ -124,11 +136,9 @@ class Example(QWidget):
             seg = stripe.get()[0]
             seg_dots = seg.get()
             if index == 0:
-                dot1, dot2 = [seg_dots[0], seg_dots[1]] if p_dist(seg_dots[0], seg_dots[1]) > p_dist(
-                    seg_dots[2], seg_dots[3]) else [seg_dots[2], seg_dots[3]]
-            else:
-                dot1, dot2 = [seg_dots[1], seg_dots[2]] if p_dist(seg_dots[1], seg_dots[2]) > p_dist(
-                    seg_dots[0], seg_dots[3]) else [seg_dots[0], seg_dots[3]]
+                seg_dots = [seg_dots[-1]] + seg_dots[:-1:]
+            dot1, dot2 = [seg_dots[1], seg_dots[2]] if p_dist(seg_dots[1], seg_dots[2]) > p_dist(
+                seg_dots[0], seg_dots[3]) else [seg_dots[0], seg_dots[3]]
             #icount = 30
             icount = int(p_dist(dot1, dot2) // pattern.width + 2)
             # print(seg_dots)
@@ -140,117 +150,65 @@ class Example(QWidget):
             border_w = border.rotate(
                 stripe_angle, expand=True, fillcolor=(255, 255, 255))
 
-            ## -----create main surface-----
-            #if index == 0:
-            #    x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi))
-            #    y_start = -int(border_w.height - (-seg_dots[0].y))
-            #elif -seg_dots[1].y != self.A:
-            #    x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi))
-            #    y_start = -int(border_w.height - (-seg_dots[1].y))
-            #else:
-            #    x_start = int(seg_dots[0].x)
-            #    y_start = self.A - \
-            #        int(border_w.height - (b_w * np.cos(stripe_angle)))
-
-            ##print(x_start, y_start, border_w.width, border_w.height)
-            #for x in range(border_w.width):
-            #    for y in range(border_w.height):
-            #        if (0 <= x_start + x and x_start + x < self.B) and (0 <= y_start + y and y_start + y < self.A):
-            #            # if (x_start + x < self.B) and (y_start + y < self.A):
-            #            pixel = border_w.getpixel((x, y))
-            #            if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
-            #                try:
-            #                    main_s.putpixel(
-            #                        (x_start + x, y_start + y), pixel)
-            #                except:
-            #                    print(sys.exc_info()[0])
-            #                    print(x_start + x, y_start + y)
-            #                    exit()
-            #                # pass
-
             # -----create side surface-----
             t_side_seg = list()
             b_side_seg = list()
             l_side_seg = list()
             r_side_seg = list()
-            if index == 0:  # the order is different
-                # offset not equal zero
-                l_side_seg = [
-                    Dot(0, -seg_dots[-1].y),
-                    Dot(0, -seg_dots[0].y),
-                    Dot(self.C / 2, -seg_dots[0].y),
-                    Dot(self.C / 2, -seg_dots[-1].y)
-                ]
+            state = self.state_segment(seg_dots)
+            if state["top"]:
                 t_side_seg = [
+                    seg_dots[-1],
                     seg_dots[-2],
-                    seg_dots[-3],
-                    Dot(seg_dots[-3].x, self.C / 2),
-                    Dot(seg_dots[-2].x, self.C / 2)
+                    Dot(seg_dots[-2].x, self.C / 2),
+                    Dot(seg_dots[-1].x, self.C / 2)
                 ]
-                if len(seg_dots) == 5:
+            if state["bottom"]:
+                if len(seg_dots) == 4:
+                    b_side_seg = [
+                        Dot(seg_dots[0].x, 0),
+                        Dot(seg_dots[1].x, 0),
+                        Dot(seg_dots[1].x, self.C / 2),
+                        Dot(seg_dots[0].x, self.C / 2),
+                    ]
+                else:
+                    i1, i2 = [1, 2] if seg_dots[1].x == 0 and - \
+                        seg_dots[1].y == self.A else [0, 1]
+                    b_side_seg = [
+                        Dot(seg_dots[i1].x, 0),
+                        Dot(seg_dots[i2].x, 0),
+                        Dot(seg_dots[i2].x, self.C / 2),
+                        Dot(seg_dots[i1].x, self.C / 2),
+                    ]
+            if state["left"]:
+                l_side_seg = [
+                    Dot(seg_dots[0].x, -seg_dots[0].y),
+                    Dot(seg_dots[1].x, -seg_dots[1].y),
+                    Dot(self.C / 2, -seg_dots[1].y),
+                    Dot(self.C / 2, -seg_dots[0].y)
+                ]
+            if state["right"]:
+                if len(seg_dots) == 4:
                     r_side_seg = [
-                        Dot(0, -seg_dots[2].y),
-                        Dot(0, -seg_dots[1].y),
-                        Dot(self.C / 2, -seg_dots[1].y),
-                        Dot(self.C / 2, -seg_dots[0].y)
+                        Dot(0, -seg_dots[-1].y),
+                        Dot(0, -seg_dots[-2].y),
+                        Dot(self.C / 2, -seg_dots[-2].y),
+                        Dot(self.C / 2, -seg_dots[-1].y),
                     ]
-                elif len(seg_dots) >= 6:
-                    print("stripe index [1] segment is invalid")
-            else:
-                state = self.state_segment(seg_dots)
-                if state["top"]:
-                    t_side_seg = [
-                        seg_dots[-1],
-                        seg_dots[-2],
-                        Dot(seg_dots[-2].x, self.C / 2),
-                        Dot(seg_dots[-1].x, self.C / 2)
+                else:
+                    i1, i2 = [-2, -3] if seg_dots[-2].x == self.B and seg_dots[-2].y == 0 else [-1, -2]
+                    r_side_seg = [
+                        Dot(0, -seg_dots[i1].y),
+                        Dot(0, -seg_dots[i2].y),
+                        Dot(self.C / 2, -seg_dots[i2].y),
+                        Dot(self.C / 2, -seg_dots[i1].y),
                     ]
-                if state["bottom"]:
-                    if len(seg_dots) == 4:
-                        b_side_seg = [
-                            Dot(seg_dots[0].x, 0),
-                            Dot(seg_dots[1].x, 0),
-                            Dot(seg_dots[1].x, self.C / 2),
-                            Dot(seg_dots[0].x, self.C / 2),
-                        ]
-                    else:
-                        i1, i2 = [1, 2] if seg_dots[1].x == 0 and - \
-                            seg_dots[1].y == self.A else [0, 1]
-                        b_side_seg = [
-                            Dot(seg_dots[i1].x, 0),
-                            Dot(seg_dots[i2].x, 0),
-                            Dot(seg_dots[i2].x, self.C / 2),
-                            Dot(seg_dots[i1].x, self.C / 2),
-                        ]
-                if state["left"]:
-                    l_side_seg = [
-                        Dot(seg_dots[0].x, -seg_dots[0].y),
-                        Dot(seg_dots[1].x, -seg_dots[1].y),
-                        Dot(self.C / 2, -seg_dots[1].y),
-                        Dot(self.C / 2, -seg_dots[0].y)
-                    ]
-                if state["right"]:
-                    if len(seg_dots) == 4:
-                        r_side_seg = [
-                            Dot(0, -seg_dots[-1].y),
-                            Dot(0, -seg_dots[-2].y),
-                            Dot(self.C / 2, -seg_dots[-2].y),
-                            Dot(self.C / 2, -seg_dots[-1].y),
-                        ]
-                    else:
-                        i1, i2 = [-2, -3] if seg_dots[-2].x == self.B and seg_dots[-2].y == 0 else [-1, -2]
-                        r_side_seg = [
-                            Dot(0, -seg_dots[i1].y),
-                            Dot(0, -seg_dots[i2].y),
-                            Dot(self.C / 2, -seg_dots[i2].y),
-                            Dot(self.C / 2, -seg_dots[i1].y),
-                        ]
 
             if t_side_seg != []:    # create top side
                 if r_tb_p.width >= self.C / 2:
                     p_b = r_tb_p.crop((0, 0, self.C / 2, r_tb_p.height))
                     top_s.paste(p_b.transpose(Image.ROTATE_270),
-                                (int(t_side_seg[0].x), 0),
+                                (int(t_side_seg[0].x + (t_side_seg[1].x - t_side_seg[0].x) / 2 - s_tb_h / 2), 0),
                                 p_b.transpose(Image.ROTATE_270).split()[3])
                 else:
                     count = int((self.C / 2 - r_tb_p.width) //
@@ -263,21 +221,24 @@ class Example(QWidget):
                                                        side_tb_pattern.width * c, 0), side_tb_pattern.split()[3])
                     side_b_r = side_b.transpose(Image.ROTATE_270)
                     top_s.paste(
-                        side_b_r, (int(t_side_seg[0].x), 0), side_b_r.split()[3])
+                        side_b_r, (int(t_side_seg[0].x + (t_side_seg[1].x - t_side_seg[0].x) / 2 - s_tb_h / 2), 0), side_b_r.split()[3])
             if b_side_seg != []:    # create bottom side
                 left_p = 0
-                if b_side_seg[1].x - b_side_seg[0].x < r_tb_p.height:
+                #print([(b.x, b.y)for b in b_side_seg])
+                if (b_side_seg[1].x - b_side_seg[0].x) <= r_tb_p.height:
                     if b_side_seg[0].x == 0 and b_side_seg[0].y == 0:
                         left_p = r_tb_p.height - (b_side_seg[1].x - b_side_seg[0].x)
                     elif b_side_seg[1].x == self.B and b_side_seg[1].y == 0:
                         pass
                     else:
-                        exit("error: side seg is wrong")
+                        pass
+                        #print(b_side_seg, r_tb_p.height)
+                        #exit("error: bottom side seg is wrong")
                 
                 if r_tb_p.width >= self.C / 2:
                     p_b = r_tb_p.crop((left_p, 0, self.C / 2, r_tb_p.height))
                     bottom_s.paste(p_b.transpose(Image.ROTATE_90),
-                                   (int(b_side_seg[0].x), 0),
+                                   (int(b_side_seg[0].x + (b_side_seg[1].x - b_side_seg[0].x) / 2 - s_tb_h / 2), 0),
                                    p_b.transpose(Image.ROTATE_90).split()[3])
                 else:
                     count = int((self.C / 2 - r_tb_p.width) //
@@ -291,14 +252,16 @@ class Example(QWidget):
 
                     side_b_r = side_b.transpose(Image.ROTATE_90)
                     bottom_s.paste(
-                        side_b_r.crop((left_p, 0, side_b_r.width, side_b_r.height)), (int(b_side_seg[0].x), 0), side_b_r.crop((left_p, 0, side_b_r.width, side_b_r.height)).split()[3])
+                        side_b_r.crop((left_p, 0, side_b_r.width, side_b_r.height)), 
+                        (int(b_side_seg[0].x + (b_side_seg[1].x - b_side_seg[0].x) / 2 - s_tb_h / 2), 0), 
+                        side_b_r.crop((left_p, 0, side_b_r.width, side_b_r.height)).split()[3])
 
             if l_side_seg != []:    # create left side
                 drawl = ImageDraw.Draw(left_s)
                 if r_lr_p.width >= self.C / 2:
                     p_b = r_lr_p.crop((0, 0, self.C / 2, r_lr_p.height))
                     left_s.paste(
-                        p_b, (0, int(l_side_seg[0].y)), p_b.split()[3])
+                        p_b, (0, int(l_side_seg[0].y + (l_side_seg[1].y - l_side_seg[0].y) / 2 - s_lr_h / 2)), p_b.split()[3])
                 else:
                     count = int((self.C / 2 - r_lr_p.width) //
                                 side_lr_pattern.width + 2)
@@ -309,7 +272,7 @@ class Example(QWidget):
                         side_b.paste(side_lr_pattern, (r_lr_p.width +
                                                        side_lr_pattern.width * c, 0), side_lr_pattern.split()[3])
                     left_s.paste(
-                        side_b, (0, int(l_side_seg[0].y)), side_b.split()[3])
+                        side_b, (0, int(l_side_seg[0].y + (l_side_seg[1].y - l_side_seg[0].y) / 2 - s_lr_h / 2)), side_b.split()[3])
             if r_side_seg != []:    # create right side
                 upper_p = 0
                 if r_side_seg[1].y - r_side_seg[0].y < r_lr_p.height:
@@ -318,11 +281,13 @@ class Example(QWidget):
                     elif r_side_seg[1].x == self.A and r_side_seg[1].y == 0:
                         pass
                     else:
-                        exit("error: side seg is wrong")
+                        pass
+                        #print(r_side_seg, r_lr_p.height)
+                        #exit("error: right side seg is wrong")
                 if r_lr_p.width >= self.C / 2:
                     p_b = r_lr_p.crop((0, upper_p, self.C / 2, r_lr_p.height))
                     right_s.paste(p_b.transpose(Image.ROTATE_180),
-                                  (0, int(r_side_seg[0].y)),
+                                  (0, int(r_side_seg[0].y + (r_side_seg[1].y - r_side_seg[0].y) / 2 - s_lr_h / 2)),
                                   p_b.transpose(Image.ROTATE_180).split()[3])
                 else:
                     count = int((self.C / 2 - r_lr_p.width) //
@@ -336,22 +301,23 @@ class Example(QWidget):
 
                     side_b_r = side_b.transpose(Image.ROTATE_180)
                     right_s.paste(
-                        side_b_r.crop((0, upper_p, side_b_r.width, side_b_r.height)), (0, int(r_side_seg[0].y)), side_b_r.crop((0, upper_p, side_b_r.width, side_b_r.height)).split()[3])
+                        side_b_r.crop((0, upper_p, side_b_r.width, side_b_r.height)), 
+                        (0, int(r_side_seg[0].y + (r_side_seg[1].y - r_side_seg[0].y) / 2 - s_lr_h / 2)), 
+                        side_b_r.crop((0, upper_p, side_b_r.width, side_b_r.height)).split()[3])
 
             x_i = 1 / np.tan(stripe_angle / 180 * np.pi)
-            for w_count in range(int(pattern.width * np.sin(stripe_angle / 180 * np.pi) / 10)):
-            #for w_count in range(1):
-                # -----create main surface-----
-                if index == 0:
+            diff_l = list()
+            # todo: can optimize...
+            for w_count in range(int(pattern.width * np.sin(stripe_angle / 180 * np.pi))):
+                d_main_s = Image.new('RGBA', (self.B, self.A), (200, 200, 200, 0))
+                # -----create main surface to calcurate difference-----
+                if -seg_dots[1].y != self.A:
                     x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi)) - dint(x_i * w_count)
-                    y_start = -int(border_w.height - (-seg_dots[0].y)) - w_count
-                elif -seg_dots[1].y != self.A:
-                    x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi)) - dint(x_i * w_count)
-                    y_start = -int(border_w.height - (-seg_dots[1].y)) - w_count
+                    y_start = -int(border_w.height - (-seg_dots[1].y)) + w_count
                 else:
                     x_start = int(seg_dots[0].x) - dint(x_i * w_count)
                     y_start = self.A - \
-                        int(border_w.height - (b_w * np.cos(stripe_angle))) - w_count
+                        int(border_w.height - (b_w * np.cos(stripe_angle))) + w_count
 
                 #print(x_start, y_start, border_w.width, border_w.height)
                 for x in range(border_w.width):
@@ -361,7 +327,7 @@ class Example(QWidget):
                             pixel = border_w.getpixel((x, y))
                             if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
                                 try:
-                                    main_s.putpixel(
+                                    d_main_s.putpixel(
                                         (x_start + x, y_start + y), pixel)
                                 except:
                                     print(sys.exc_info()[0])
@@ -370,7 +336,49 @@ class Example(QWidget):
                                 # pass
 
                 #-----calcurate difference of pixel-----
-                ############
+                diff = list()
+                if state["top"]:
+                    diff.append([d_main_s.getpixel((x, 0)) for x in range(int(t_side_seg[1].x) - int(t_side_seg[0].x))])
+                    diff.append([top_s.getpixel((x, self.C / 2 - 1)) for x in range(int(t_side_seg[1].x) - int(t_side_seg[0].x))])
+                if state["bottom"]:
+                    diff.append([d_main_s.getpixel((x, self.A - 1)) for x in range(int(b_side_seg[1].x) - int(b_side_seg[0].x))])
+                    diff.append([bottom_s.getpixel((x, 0)) for x in range(int(b_side_seg[1].x) - int(b_side_seg[0].x))])
+                if state["left"]:
+                    diff.append([d_main_s.getpixel((self.C / 2 - 1, y)) for y in range(int(l_side_seg[1].y) - int(l_side_seg[0].y))])
+                    diff.append([left_s.getpixel((0, y)) for y in range(int(l_side_seg[1].y) - int(l_side_seg[0].y))])
+                if state["right"]:
+                    diff.append([d_main_s.getpixel((self.B - 1, y)) for y in range(int(r_side_seg[1].y) - int(r_side_seg[0].y))])
+                    diff.append([right_s.getpixel((0, y)) for y in range(int(r_side_seg[1].y) - int(r_side_seg[0].y))])
+                diff_r = 0
+                for d_i in range(int(len(diff) / 2)):
+                    diff_r += calc_diff(diff[2 * d_i], diff[2 * d_i + 1])
+                diff_l.append(diff_r)
+
+            min_i = diff_l.index(min(diff_l))
+            if -seg_dots[1].y != self.A:
+                x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi)) - dint(x_i * min_i)
+                y_start = -int(border_w.height - (-seg_dots[1].y)) + min_i
+            else:
+                x_start = int(seg_dots[0].x) - dint(x_i * min_i)
+                y_start = self.A - \
+                    int(border_w.height - (b_w * np.cos(stripe_angle))) + min_i
+
+            print("min: ", min_i, diff_l[min_i])
+
+            # -----create main surface-----
+            for x in range(border_w.width):
+                for y in range(border_w.height):
+                    if (0 <= x_start + x and x_start + x < self.B) and (0 <= y_start + y and y_start + y < self.A):
+                        # if (x_start + x < self.B) and (y_start + y < self.A):
+                        pixel = border_w.getpixel((x, y))
+                        if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
+                            try:
+                                main_s.putpixel(
+                                    (x_start + x, y_start + y), pixel)
+                            except:
+                                print(sys.exc_info()[0])
+                                print(x_start + x, y_start + y)
+                                exit()
 
             # -----debug part-----
             i = 0
