@@ -45,17 +45,16 @@ def calc_diff(pixels1, pixels2):
     return diff
 
 
-class Example(QWidget):
+class WrappingCreator(QWidget):
 
-    def __init__(self):
+    def __init__(self, a, b, c):
         super().__init__()
 
         self.lbl = None
         self.initUI()
-        self.A = int(150 * DPI / 25.4)
-        self.B = int(120 * DPI / 25.4)
-        self.C = int(30 * DPI / 25.4)
-        #self.theta = 45.5
+        self.A = a
+        self.B = b
+        self.C = c
         self.giftbox_render()
 
     def initUI(self):

@@ -124,14 +124,6 @@ class SetDetailWindow(QDialog):
         self.layout.addSpacing(20)
 
     def init_color_UI(self):
-        self.color_palette = QGroupBox("ストライプカラーの選択")
-        self.c_palette = QVBoxLayout(self)
-        self.c_palette.setSpacing(20)
-        self.c_palette_list = QListWidget(self)
-        self.c_palette_list.setSelectionMode(
-            QAbstractItemView.ExtendedSelection)
-        self.add_num = 0
-
         self.bg_color_set = QGroupBox("背景色の選択")
         self.select_back_color = QHBoxLayout(self)
         self.b_c = QColor('white')
@@ -150,6 +142,32 @@ class SetDetailWindow(QDialog):
         self.bg_color_set.setLayout(self.select_back_color)
         self.layout.addWidget(self.bg_color_set)
         self.layout.addSpacing(20)
+
+        self.select_buttons_g = QGroupBox("モード選択")
+        self.select_buttons = QHBoxLayout(self)
+        self.select_detail = QButtonGroup()
+        self.plane_b = QRadioButton('無地ストライプ')
+        self.plane_b.toggled.connect(lambda: self.change_mode(0))
+        self.image_b = QRadioButton('画像の利用')
+        self.image_b.toggled.connect(lambda: self.change_mode(1))
+        self.select_detail.addButton(self.plane_b, 0)
+        self.select_detail.addButton(self.image_b, 1)
+        self.select_buttons.addWidget(self.plane_b)
+        self.select_buttons.addWidget(self.image_b)
+        self.select_buttons_g.setLayout(self.select_buttons)
+        self.layout.addWidget(self.select_buttons_g)
+        self.layout.addSpacing(20)
+        
+        #-----color select area-----
+        self.sc_frame = QFrame()
+        self.color_selector = QVBoxLayout(self)
+        self.color_palette = QGroupBox("ストライプカラーの選択")
+        self.c_palette = QVBoxLayout(self)
+        self.c_palette.setSpacing(20)
+        self.c_palette_list = QListWidget(self)
+        self.c_palette_list.setSelectionMode(
+            QAbstractItemView.ExtendedSelection)
+        self.add_num = 0
 
         self.c_palette.addWidget(self.c_palette_list)
         self.red_b = QPushButton("赤系色sample")
@@ -183,8 +201,8 @@ class SetDetailWindow(QDialog):
         self.c_palette.addLayout(demo_color_buttons)
 
         self.color_palette.setLayout(self.c_palette)
-        self.layout.addWidget(self.color_palette)
-        self.layout.addSpacing(20)
+        self.color_selector.addWidget(self.color_palette)
+        self.color_selector.addSpacing(20)
 
         buttons = QHBoxLayout()
         add_button = QPushButton("追加")
@@ -203,11 +221,33 @@ class SetDetailWindow(QDialog):
         buttons.addWidget(add_button)
         buttons.addWidget(delete_button)
         buttons.addWidget(switch_button)
-        self.layout.addLayout(buttons)
+        self.color_selector.addLayout(buttons)
 
         self.c_palette_list.itemDoubleClicked.connect(self.change_color_column)
+        self.sc_frame.setLayout(self.color_selector)
+        self.layout.addWidget(self.sc_frame)
+        
+        #-----image selector area-----
+        self.si_frame = QFrame()
+        self.image_selector = QVBoxLayout()
+        self.file_button = QPushButton()    
+
+        # TODO: load image file 
+
+        self.image_selector.addWidget(self.file_button)
+        self.si_frame.setLayout(self.image_selector)
+        self.layout.addWidget(self.si_frame)
+
+        self.plane_b.setChecked(True)   # plane button checked
 
     # ヘルプ書かなきゃ
+    def change_mode(self, mode):
+        if mode == 0:
+            self.sc_frame.show()
+            self.si_frame.hide()
+        elif mode == 1:
+            self.sc_frame.hide()
+            self.si_frame.show()
 
     def add_color_column(self, c=None):
         if c is False:
