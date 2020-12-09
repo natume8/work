@@ -63,12 +63,14 @@ class SetDetailWindow(QDialog):
         self.center_frame()
         self.initUI()
         self.init_color_UI()
+        self.pattern_name = ""
 
         self.setLayout(self.layout)
         # self.show()
 
     def initUI(self):
         self.input_group = QGroupBox("&ストライプ情報入力")
+        self.input_group.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         warinig_label = QLabel('* は必須 (数値で入力)')
         warinig_label.setStyleSheet('color: red')
         label_s_w = QLabel('* 線の幅 (mm)')
@@ -125,6 +127,7 @@ class SetDetailWindow(QDialog):
 
     def init_color_UI(self):
         self.bg_color_set = QGroupBox("背景色の選択")
+        self.bg_color_set.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.select_back_color = QHBoxLayout(self)
         self.b_c = QColor('white')
         select_b_label = QLabel("背景色: ")
@@ -144,6 +147,8 @@ class SetDetailWindow(QDialog):
         self.layout.addSpacing(20)
 
         self.select_buttons_g = QGroupBox("モード選択")
+        self.select_buttons_g.setSizePolicy(
+            QSizePolicy.Minimum, QSizePolicy.Fixed)
         self.select_buttons = QHBoxLayout(self)
         self.select_detail = QButtonGroup()
         self.plane_b = QRadioButton('無地ストライプ')
@@ -157,14 +162,16 @@ class SetDetailWindow(QDialog):
         self.select_buttons_g.setLayout(self.select_buttons)
         self.layout.addWidget(self.select_buttons_g)
         self.layout.addSpacing(20)
-        
-        #-----color select area-----
+
+        # -----color select area-----
         self.sc_frame = QFrame()
         self.color_selector = QVBoxLayout(self)
         self.color_palette = QGroupBox("ストライプカラーの選択")
         self.c_palette = QVBoxLayout(self)
         self.c_palette.setSpacing(20)
         self.c_palette_list = QListWidget(self)
+        # self.c_palette_list.setSizePolicy(
+        #     QSizePolicy.Minimum, QSizePolicy.Maximum)
         self.c_palette_list.setSelectionMode(
             QAbstractItemView.ExtendedSelection)
         self.add_num = 0
@@ -226,16 +233,33 @@ class SetDetailWindow(QDialog):
         self.c_palette_list.itemDoubleClicked.connect(self.change_color_column)
         self.sc_frame.setLayout(self.color_selector)
         self.layout.addWidget(self.sc_frame)
-        
-        #-----image selector area-----
+
+        # -----image selector area-----
         self.si_frame = QFrame()
+        self.si_area = QVBoxLayout()
+        self.si_area_g = QGroupBox("画像の選択")
         self.image_selector = QVBoxLayout()
-        self.file_button = QPushButton()    
 
-        # TODO: load image file 
+        self.iarea_wrapper = QFrame()
+        self.iarea_l = QVBoxLayout()
+        self.iarea = QLabel()
+        self.iarea.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        self.iarea_l.addWidget(self.iarea)
+        self.iarea_wrapper.setLayout(self.iarea_l)
+        self.iarea_wrapper.setFrameStyle(QFrame.Panel)
+        self.iarea_l.setAlignment(Qt.AlignCenter)
 
+        self.file_button = QPushButton("画像の読み込み")
+        self.file_button.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        self.file_button.clicked.connect(self.load_image_file)
+
+        # TODO: load image file
+
+        self.image_selector.addWidget(self.iarea_wrapper)
         self.image_selector.addWidget(self.file_button)
-        self.si_frame.setLayout(self.image_selector)
+        self.si_area_g.setLayout(self.image_selector)
+        self.si_area.addWidget(self.si_area_g)
+        self.si_frame.setLayout(self.si_area)
         self.layout.addWidget(self.si_frame)
 
         self.plane_b.setChecked(True)   # plane button checked
@@ -244,10 +268,35 @@ class SetDetailWindow(QDialog):
     def change_mode(self, mode):
         if mode == 0:
             self.sc_frame.show()
+            self.sc_frame.setSizePolicy(
+                QSizePolicy.Minimum, QSizePolicy.Maximum)
             self.si_frame.hide()
+            self.si_frame.setSizePolicy(
+                QSizePolicy.Ignored, QSizePolicy.Ignored)
         elif mode == 1:
-            self.sc_frame.hide()
             self.si_frame.show()
+            self.si_frame.setSizePolicy(
+                QSizePolicy.Minimum, QSizePolicy.Minimum)
+            self.sc_frame.hide()
+            self.sc_frame.setSizePolicy(
+                QSizePolicy.Ignored, QSizePolicy.Ignored)
+
+    def load_image_file(self):
+        permitted_format = ["jpg", "png", "bpm", "jpeg"]
+        fname = QFileDialog.getOpenFileName(self, '画像を開く', '/home')
+        if self.pattern_name != "":
+            self.iarea.setPixmap(QPixmap(""))
+        if fname[0].split(".")[-1].lower() in permitted_format:
+            self.pattern_name = fname[0]
+            image = QPixmap(fname[0])
+            image = image.scaled(QSize(self.iarea_wrapper.size().width() - 25, self.iarea_wrapper.size().height() - 25),
+                                 Qt.KeepAspectRatio)
+            self.iarea.setPixmap(image)
+        elif fname[0] == "":
+            pass
+        else:
+            QMessageBox.warning(
+                self, "エラー！", "対応していない拡張子です\n(jpg, png, gif を推奨)", QMessageBox.Ok, QMessageBox.Ok)
 
     def add_color_column(self, c=None):
         if c is False:
