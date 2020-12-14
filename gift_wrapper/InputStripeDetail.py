@@ -64,6 +64,7 @@ class SetDetailWindow(QDialog):
         self.initUI()
         self.init_color_UI()
         self.pattern_name = ""
+        self.mode = 0   # 0: color stripe, 1: image stripe
 
         self.setLayout(self.layout)
         # self.show()
@@ -267,6 +268,7 @@ class SetDetailWindow(QDialog):
     # ヘルプ書かなきゃ
     def change_mode(self, mode):
         if mode == 0:
+            self.mode = 0
             self.sc_frame.show()
             self.sc_frame.setSizePolicy(
                 QSizePolicy.Minimum, QSizePolicy.Maximum)
@@ -274,6 +276,7 @@ class SetDetailWindow(QDialog):
             self.si_frame.setSizePolicy(
                 QSizePolicy.Ignored, QSizePolicy.Ignored)
         elif mode == 1:
+            self.mode = 1
             self.si_frame.show()
             self.si_frame.setSizePolicy(
                 QSizePolicy.Minimum, QSizePolicy.Minimum)

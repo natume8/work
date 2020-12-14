@@ -17,8 +17,12 @@ from .Save2DGraphicsInterface import (render_net_real_size,
                                       render_stripe_real_size,
                                       render_wrap_paper_and_net_real_size,
                                       save_svg_to_pdf)
+from .sample_pictures import Actions, WrappingCreator
+from .InputDataset import InputDataset
+
 
 SHOKI_GAZO = ""
+DPI = 72
 
 default_paper_size = {
     'A4': [297.0, 210.0],
@@ -122,6 +126,7 @@ class GiftWrapperForm(QWidget):
         self.magnification = 1
         self.giftbox = None
         self.b_theta = None
+        self.image_emit = None
         self.initUI()
 
     def initUI(self):
@@ -424,6 +429,21 @@ class GiftWrapperForm(QWidget):
         self.d_label.setText(f"[縦 {m_ps[1]:.1f}mm, 横 {m_ps[0]:.1f}mm]")
         self.d_label.adjustSize()
 
+    def render_image_stripe(self, vertical, horizon, high, line_w, interval_w, offset, s2b_angle, b_angle):
+        self.image_emit = Actions(
+            InputDataset(vertical, horizon, high, line_w, interval_w, offset, s2b_angle, b_angle))
+        self.image_emit.emit_image.connect(self.recieve_emit_image)
+
+    def recieve_emit_image(self, num):
+        r_image = self.image_emit.paper_image
+        pMap = QPixmap.fromImage(r_image)
+        pMap = pMap.scaled(QSize(MAX_HORIZON, MAX_VERTICAL),
+                           Qt.KeepAspectRatio)
+        self.w_lbl.setPixmap(pMap)
+        self.w_lbl.move(int(self.width() / 2 - self.lbl.width() / 2),
+                        int(self.height() / 2 - self.lbl.height() / 2))
+        self.image_emit.close()
+
     def call_function(self, index_l=None):  # 関数の呼び出し
         what_call = self.sender()
         vertical = self.inputVertical.text()
@@ -483,13 +503,24 @@ class GiftWrapperForm(QWidget):
                 self.render_guide_line_with_no_paper(
                     vertical, horizon, high, theta)
                 if self.seamless_pattern.checkState() == Qt.Checked:
-                    self.s_exec_flag = True
-                    self.render_seamless_wrap_paper(vertical, horizon, high,
-                                                    parameters.stripe_width,
-                                                    parameters.stripe_interval_width,
-                                                    parameters.offset,
-                                                    parameters.stripe_theta / 180 * np.pi,
-                                                    theta / 180 * np.pi)
+                    if self.d_w.mode == 0:      # color stripe rendering
+                        self.s_exec_flag = True
+                        self.render_seamless_wrap_paper(vertical, horizon, high,
+                                                        parameters.stripe_width,
+                                                        parameters.stripe_interval_width,
+                                                        parameters.offset,
+                                                        parameters.stripe_theta / 180 * np.pi,
+                                                        theta / 180 * np.pi)
+                    elif self.d_w.mode == 1:    # image stripe rendering
+                        self.s_exec_flag = True
+                        self.render_image_stripe(vertical, horizon, high,
+                                                 parameters.stripe_width,
+                                                 parameters.stripe_interval_width,
+                                                 parameters.offset,
+                                                 parameters.stripe_theta / 180 * np.pi,
+                                                 theta / 180 * np.pi)
+                    else:
+                        exit("err: what's your choosing?")
                 if self.g_w_can_hover:
                     self.g_w_can_hover = False
 

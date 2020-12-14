@@ -6,12 +6,12 @@ import sys
 import math
 import numpy as np
 from PyQt5.QtCore import *
-from PyQt5.QtWidgets import (QWidget, QHBoxLayout,
-                             QLabel, QApplication)
+from PyQt5.QtWidgets import (QWidget, QDialog, QHBoxLayout,
+                             QLabel, QApplication, QProgressBar)
 from PyQt5.QtGui import QPixmap, QIcon, QImage, QPainter, QFont, QColor, QPolygonF, QPen
 from PyQt5.QtSvg import *
 import cv2
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageOps
 from PIL.ImageQt import ImageQt
 import matplotlib.pyplot as plt
 import numpy as np
@@ -40,45 +40,92 @@ def dint(num):
 
 def calc_diff(pixels1, pixels2):
     diff = 0
-    for pixel1, pixel2 in zip(pixels1, pixels2):  
-        diff += math.sqrt((pixel1[0] - pixel2[0]) ** 2) + math.sqrt((pixel1[1] - pixel2[1]) ** 2) + math.sqrt((pixel1[2] - pixel2[2]) ** 2)
+    for pixel1, pixel2 in zip(pixels1, pixels2):
+        diff += math.sqrt((pixel1[0] - pixel2[0]) ** 2) + math.sqrt(
+            (pixel1[1] - pixel2[1]) ** 2) + math.sqrt((pixel1[2] - pixel2[2]) ** 2)
     return diff
 
 
-class WrappingCreator(QWidget):
+class Actions(QDialog):
+    """
+    Simple dialog that consists of a Progress Bar and a Button.
+    Clicking on the button results in the start of a timer and
+    updates the progress bar.
+    """
 
-    def __init__(self, a, b, c):
+    emit_image = pyqtSignal(int)
+
+    def __init__(self, p_dataset):
+        self.para = p_dataset
+        self.paper_image = None
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('generating...')
+        self.progress = QProgressBar(self)
+        self.progress.setGeometry(0, 0, 300, 25)
+        self.prog = WrappingCreator(self.para.get()[0:3])
+        self.prog.processNum.connect(self.process_start)
+        self.prog.emit_image.connect(self.emitImageArea)
+        self.prog.countChanged.connect(self.onCountChanged)
+        self.show()
+        self.prog.start()
+
+    def process_start(self, value):
+        self.progress.setMaximum(value + 4)
+
+    def onCountChanged(self, value):
+        self.progress.setValue(value)
+
+    def emitImageArea(self, num):
+        self.paper_image = self.prog.paper_image
+        self.emit_image.emit(0)
+
+
+class WrappingCreator(QThread):
+
+    processNum = pyqtSignal(int)
+    countChanged = pyqtSignal(int)
+    emit_image = pyqtSignal(int)
+
+    def __init__(self, data):
         super().__init__()
 
         self.lbl = None
-        self.initUI()
-        self.A = a
-        self.B = b
-        self.C = c
-        self.giftbox_render()
+        self.paper_image = None
+        # self.initUI()
+        self.A = int(data[0] * DPI / 25.4)
+        self.B = int(data[1] * DPI / 25.4)
+        self.C = int(data[2] * DPI / 25.4)
+
+        # -----define variable-----
+        self.gift_b = GiftBox(self.A, self.B, self.C)
+        self.theta = self.gift_b.get_optimal_theta()
+        self.b_w = int(parameters.stripe_width * DPI / 25.4)
+        self.stripe_angle = int(parameters.stripe_theta)
+        self.b_interval = int(parameters.stripe_interval_width * DPI / 25.4)
+        self.offset = int(parameters.offset * DPI / 25.4)
+        self.gift_b.draw_continuous_picture(
+            self.b_w, self.b_interval, self.offset, self.theta / 180 * np.pi, self.stripe_angle / 180 * np.pi)
+        self.gift = self.gift_b.all_stripe
+        # self.giftbox_render()
 
     def initUI(self):
 
-        self.imageArea = QHBoxLayout(self)
-        # QPixmapオブジェクト作成
+        # self.imageArea = QHBoxLayout(self)
+        # # QPixmapオブジェクト作成
 
-        # ラベルを作ってその中に画像を置く
-        self.setLayout(self.imageArea)
-        self.move(300, 50)
-        self.setWindowTitle('Imoyokan')
-        self.show()
+        # # ラベルを作ってその中に画像を置く
+        # self.setLayout(self.imageArea)
+        # self.move(300, 50)
+        # self.setWindowTitle('Imoyokan')
+        # self.show()
+        pass
 
-    def giftbox_render(self):
-        # -----define variable-----
-        gift_b = GiftBox(self.A, self.B, self.C)
-        self.theta = gift_b.get_optimal_theta()
-        b_w = int(11 * DPI / 25.4)
-        stripe_angle = 45
-        b_interval = int(10 * DPI / 25.4)
-        offset = int(5 * DPI / 25.4)
-        gift_b.draw_continuous_picture(
-            b_w, b_interval, offset, self.theta / 180 * np.pi, stripe_angle / 180 * np.pi)
-        gift = gift_b.all_stripe
+    def run(self):
+        self.processNum.emit(len(self.gift))
+        th_count = 0
 
         # -----load pattern piece-----
         # separete pattern
@@ -89,21 +136,21 @@ class WrappingCreator(QWidget):
 
         # -----shape patterns-----
         pattern = o_pattern.resize(
-            (b_w, int(b_w * o_pattern.width / o_pattern.height)))
+            (self.b_w, int(self.b_w * o_pattern.width / o_pattern.height)))
         print(pattern.width, pattern.height)
         # ## select side pattern's size
-        side_lr_pattern = pattern.resize((int(b_w / np.cos(stripe_angle / 180 *
-                                                           np.pi)),
-                                          int(pattern.width * b_w / pattern.height / np.cos(stripe_angle /
-                                                                                            180 * np.pi))))
-        side_tb_pattern = pattern.resize((int(b_w / np.sin(stripe_angle / 180 *
-                                                           np.pi)),
-                                          int(pattern.width * b_w / pattern.height / np.sin(stripe_angle /
-                                                                                            180 * np.pi))))
-        #side_lr_pattern = pattern.resize((int(b_w),
-        #                                  int(pattern.width * b_w / pattern.height)))
-        #side_tb_pattern = pattern.resize((int(b_w),
-        #                                  int(pattern.width * b_w / pattern.height)))
+        side_lr_pattern = pattern.resize((int(self.b_w / np.cos(self.stripe_angle / 180 *
+                                                                np.pi)),
+                                          int(pattern.width * self.b_w / pattern.height / np.cos(self.stripe_angle /
+                                                                                                 180 * np.pi))))
+        side_tb_pattern = pattern.resize((int(self.b_w / np.sin(self.stripe_angle / 180 *
+                                                                np.pi)),
+                                          int(pattern.width * self.b_w / pattern.height / np.sin(self.stripe_angle /
+                                                                                                 180 * np.pi))))
+        # side_lr_pattern = pattern.resize((int(self.b_w),
+        #                                  int(pattern.width * self.b_w / pattern.height)))
+        # side_tb_pattern = pattern.resize((int(self.b_w),
+        #                                  int(pattern.width * self.b_w / pattern.height)))
         s_lr_h = side_lr_pattern.height
         s_tb_h = side_tb_pattern.height
 
@@ -127,11 +174,13 @@ class WrappingCreator(QWidget):
             'RGBA', (int(self.C / 2), self.A), (200, 200, 200, 0))
         right_s = Image.new(
             'RGBA', (int(self.C / 2), self.A), (200, 200, 200, 0))
+        th_count += 1
+        self.countChanged.emit(th_count)
 
         # draw = ImageDraw.Draw(main_s)
 
         # -----iterate proccessing of dots of stripe-----
-        for index, stripe in enumerate(gift):
+        for index, stripe in enumerate(self.gift):
             seg = stripe.get()[0]
             seg_dots = seg.get()
             if index == 0:
@@ -147,7 +196,7 @@ class WrappingCreator(QWidget):
                 border.paste(pattern, (pattern.width * i, 0),
                              pattern.split()[3])
             border_w = border.rotate(
-                stripe_angle, expand=True, fillcolor=(255, 255, 255))
+                self.stripe_angle, expand=True, fillcolor=(255, 255, 255))
 
             # -----create side surface-----
             t_side_seg = list()
@@ -207,7 +256,8 @@ class WrappingCreator(QWidget):
                 if r_tb_p.width >= self.C / 2:
                     p_b = r_tb_p.crop((0, 0, self.C / 2, r_tb_p.height))
                     top_s.paste(p_b.transpose(Image.ROTATE_270),
-                                (int(t_side_seg[0].x + (t_side_seg[1].x - t_side_seg[0].x) / 2 - s_tb_h / 2), 0),
+                                (int(
+                                    t_side_seg[0].x + (t_side_seg[1].x - t_side_seg[0].x) / 2 - s_tb_h / 2), 0),
                                 p_b.transpose(Image.ROTATE_270).split()[3])
                 else:
                     count = int((self.C / 2 - r_tb_p.width) //
@@ -226,18 +276,20 @@ class WrappingCreator(QWidget):
                 #print([(b.x, b.y)for b in b_side_seg])
                 if (b_side_seg[1].x - b_side_seg[0].x) <= r_tb_p.height:
                     if b_side_seg[0].x == 0 and b_side_seg[0].y == 0:
-                        left_p = r_tb_p.height - (b_side_seg[1].x - b_side_seg[0].x)
+                        left_p = r_tb_p.height - \
+                            (b_side_seg[1].x - b_side_seg[0].x)
                     elif b_side_seg[1].x == self.B and b_side_seg[1].y == 0:
                         pass
                     else:
                         pass
                         #print(b_side_seg, r_tb_p.height)
                         #exit("error: bottom side seg is wrong")
-                
+
                 if r_tb_p.width >= self.C / 2:
                     p_b = r_tb_p.crop((left_p, 0, self.C / 2, r_tb_p.height))
                     bottom_s.paste(p_b.transpose(Image.ROTATE_90),
-                                   (int(b_side_seg[0].x + (b_side_seg[1].x - b_side_seg[0].x) / 2 - s_tb_h / 2), 0),
+                                   (int(
+                                       b_side_seg[0].x + (b_side_seg[1].x - b_side_seg[0].x) / 2 - s_tb_h / 2), 0),
                                    p_b.transpose(Image.ROTATE_90).split()[3])
                 else:
                     count = int((self.C / 2 - r_tb_p.width) //
@@ -251,8 +303,10 @@ class WrappingCreator(QWidget):
 
                     side_b_r = side_b.transpose(Image.ROTATE_90)
                     bottom_s.paste(
-                        side_b_r.crop((left_p, 0, side_b_r.width, side_b_r.height)), 
-                        (int(b_side_seg[0].x + (b_side_seg[1].x - b_side_seg[0].x) / 2 - s_tb_h / 2), 0), 
+                        side_b_r.crop(
+                            (left_p, 0, side_b_r.width, side_b_r.height)),
+                        (int(b_side_seg[0].x + (b_side_seg[1].x -
+                                                b_side_seg[0].x) / 2 - s_tb_h / 2), 0),
                         side_b_r.crop((left_p, 0, side_b_r.width, side_b_r.height)).split()[3])
 
             if l_side_seg != []:    # create left side
@@ -276,7 +330,8 @@ class WrappingCreator(QWidget):
                 upper_p = 0
                 if r_side_seg[1].y - r_side_seg[0].y < r_lr_p.height:
                     if r_side_seg[0].x == 0 and r_side_seg[0].y == 0:
-                        upper_p = r_lr_p.height - (r_side_seg[1].y - r_side_seg[0].y)
+                        upper_p = r_lr_p.height - \
+                            (r_side_seg[1].y - r_side_seg[0].y)
                     elif r_side_seg[1].x == self.A and r_side_seg[1].y == 0:
                         pass
                     else:
@@ -286,7 +341,8 @@ class WrappingCreator(QWidget):
                 if r_lr_p.width >= self.C / 2:
                     p_b = r_lr_p.crop((0, upper_p, self.C / 2, r_lr_p.height))
                     right_s.paste(p_b.transpose(Image.ROTATE_180),
-                                  (0, int(r_side_seg[0].y + (r_side_seg[1].y - r_side_seg[0].y) / 2 - s_lr_h / 2)),
+                                  (0, int(
+                                      r_side_seg[0].y + (r_side_seg[1].y - r_side_seg[0].y) / 2 - s_lr_h / 2)),
                                   p_b.transpose(Image.ROTATE_180).split()[3])
                 else:
                     count = int((self.C / 2 - r_lr_p.width) //
@@ -300,23 +356,29 @@ class WrappingCreator(QWidget):
 
                     side_b_r = side_b.transpose(Image.ROTATE_180)
                     right_s.paste(
-                        side_b_r.crop((0, upper_p, side_b_r.width, side_b_r.height)), 
-                        (0, int(r_side_seg[0].y + (r_side_seg[1].y - r_side_seg[0].y) / 2 - s_lr_h / 2)), 
+                        side_b_r.crop(
+                            (0, upper_p, side_b_r.width, side_b_r.height)),
+                        (0, int(
+                            r_side_seg[0].y + (r_side_seg[1].y - r_side_seg[0].y) / 2 - s_lr_h / 2)),
                         side_b_r.crop((0, upper_p, side_b_r.width, side_b_r.height)).split()[3])
 
-            x_i = 1 / np.tan(stripe_angle / 180 * np.pi)
+            x_i = 1 / np.tan(self.stripe_angle / 180 * np.pi)
             diff_l = list()
             # todo: can optimize...
-            for w_count in range(int(pattern.width * np.sin(stripe_angle / 180 * np.pi))):
-                d_main_s = Image.new('RGBA', (self.B, self.A), (200, 200, 200, 0))
+            for w_count in range(int(pattern.width * np.sin(self.stripe_angle / 180 * np.pi))):
+                d_main_s = Image.new(
+                    'RGBA', (self.B, self.A), (200, 200, 200, 0))
                 # -----create main surface to calcurate difference-----
                 if -seg_dots[1].y != self.A:
-                    x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi)) - dint(x_i * w_count)
-                    y_start = -int(border_w.height - (-seg_dots[1].y)) + w_count
+                    x_start = int(self.b_w * -np.sin(self.stripe_angle /
+                                                     180 * np.pi)) - dint(x_i * w_count)
+                    y_start = -int(border_w.height -
+                                   (-seg_dots[1].y)) + w_count
                 else:
                     x_start = int(seg_dots[0].x) - dint(x_i * w_count)
                     y_start = self.A - \
-                        int(border_w.height - (b_w * np.cos(stripe_angle))) + w_count
+                        int(border_w.height - (self.b_w *
+                                               np.cos(self.stripe_angle))) + w_count
 
                 #print(x_start, y_start, border_w.width, border_w.height)
                 for x in range(border_w.width):
@@ -334,20 +396,28 @@ class WrappingCreator(QWidget):
                                     exit()
                                 # pass
 
-                #-----calcurate difference of pixel-----
+                # -----calcurate difference of pixel-----
                 diff = list()
                 if state["top"]:
-                    diff.append([d_main_s.getpixel((x, 0)) for x in range(int(t_side_seg[1].x) - int(t_side_seg[0].x))])
-                    diff.append([top_s.getpixel((x, self.C / 2 - 1)) for x in range(int(t_side_seg[1].x) - int(t_side_seg[0].x))])
+                    diff.append([d_main_s.getpixel((x, 0)) for x in range(
+                        int(t_side_seg[1].x) - int(t_side_seg[0].x))])
+                    diff.append([top_s.getpixel((x, self.C / 2 - 1))
+                                 for x in range(int(t_side_seg[1].x) - int(t_side_seg[0].x))])
                 if state["bottom"]:
-                    diff.append([d_main_s.getpixel((x, self.A - 1)) for x in range(int(b_side_seg[1].x) - int(b_side_seg[0].x))])
-                    diff.append([bottom_s.getpixel((x, 0)) for x in range(int(b_side_seg[1].x) - int(b_side_seg[0].x))])
+                    diff.append([d_main_s.getpixel((x, self.A - 1))
+                                 for x in range(int(b_side_seg[1].x) - int(b_side_seg[0].x))])
+                    diff.append([bottom_s.getpixel((x, 0)) for x in range(
+                        int(b_side_seg[1].x) - int(b_side_seg[0].x))])
                 if state["left"]:
-                    diff.append([d_main_s.getpixel((self.C / 2 - 1, y)) for y in range(int(l_side_seg[1].y) - int(l_side_seg[0].y))])
-                    diff.append([left_s.getpixel((0, y)) for y in range(int(l_side_seg[1].y) - int(l_side_seg[0].y))])
+                    diff.append([d_main_s.getpixel((self.C / 2 - 1, y))
+                                 for y in range(int(l_side_seg[1].y) - int(l_side_seg[0].y))])
+                    diff.append([left_s.getpixel((0, y)) for y in range(
+                        int(l_side_seg[1].y) - int(l_side_seg[0].y))])
                 if state["right"]:
-                    diff.append([d_main_s.getpixel((self.B - 1, y)) for y in range(int(r_side_seg[1].y) - int(r_side_seg[0].y))])
-                    diff.append([right_s.getpixel((0, y)) for y in range(int(r_side_seg[1].y) - int(r_side_seg[0].y))])
+                    diff.append([d_main_s.getpixel((self.B - 1, y))
+                                 for y in range(int(r_side_seg[1].y) - int(r_side_seg[0].y))])
+                    diff.append([right_s.getpixel((0, y)) for y in range(
+                        int(r_side_seg[1].y) - int(r_side_seg[0].y))])
                 diff_r = 0
                 for d_i in range(int(len(diff) / 2)):
                     diff_r += calc_diff(diff[2 * d_i], diff[2 * d_i + 1])
@@ -355,14 +425,16 @@ class WrappingCreator(QWidget):
 
             min_i = diff_l.index(min(diff_l))
             if -seg_dots[1].y != self.A:
-                x_start = int(b_w * -np.sin(stripe_angle / 180 * np.pi)) - dint(x_i * min_i)
+                x_start = int(self.b_w * -np.sin(self.stripe_angle /
+                                                 180 * np.pi)) - dint(x_i * min_i)
                 y_start = -int(border_w.height - (-seg_dots[1].y)) + min_i
             else:
                 x_start = int(seg_dots[0].x) - dint(x_i * min_i)
                 y_start = self.A - \
-                    int(border_w.height - (b_w * np.cos(stripe_angle))) + min_i
+                    int(border_w.height - (self.b_w *
+                                           np.cos(self.stripe_angle))) + min_i
 
-            print("min: ", min_i, diff_l[min_i])
+            # print("min: ", min_i, diff_l[min_i])
 
             # -----create main surface-----
             for x in range(border_w.width):
@@ -379,6 +451,9 @@ class WrappingCreator(QWidget):
                                 print(x_start + x, y_start + y)
                                 exit()
 
+            th_count += 1
+            self.countChanged.emit(th_count)
+
             # -----debug part-----
             i = 0
             for dot in seg.get():
@@ -392,7 +467,6 @@ class WrappingCreator(QWidget):
             # break
             # break
 
-
         # -----create wrapping paper's parts-----
         net_center_i.paste(
             main_s, (int(self.C / 2), int(self.C / 2)), main_s.split()[3])
@@ -402,6 +476,8 @@ class WrappingCreator(QWidget):
         net_center_i.paste(left_s, (0, int(self.C / 2)), left_s.split()[3])
         net_center_i.paste(
             right_s, (int(self.B + self.C / 2), int(self.C / 2)), right_s.split()[3])
+        th_count += 1
+        self.countChanged.emit(th_count)
 
         # -----create wrapping paper design-----
         net_left_i = Image.new(
@@ -442,29 +518,35 @@ class WrappingCreator(QWidget):
         net_image.paste(net_right_i,
                         (int(self.B * 2 + self.C * 3 / 2), int(self.C)),
                         net_right_i.split()[3])
+        th_count += 1
+        self.countChanged.emit(th_count)
 
         # -----rotate and paste wrapping design to paper-----
-        paper_w, paper_h = gift_b.get_valid_paper_size(
+        paper_w, paper_h = self.gift_b.get_valid_paper_size(
             self.theta / 180 * np.pi)
         paper = Image.new(
             'RGBA', (int(paper_w), int(paper_h)), (200, 200, 200, 0))
         self.rotate_paper(net_image, paper, self.theta)
+        th_count += 1
+        self.countChanged.emit(th_count)
 
         # -----view result-----
-        lbl = QLabel(self)
+        #lbl = QLabel(self)
         #net_image = net_image.resize((int(self.B * 2), int(self.A * 2)))
-        net_image = net_image.resize(
-            (int((self.B * 3 + self.C * 2) * 0.8), int((self.A * 2 + self.C * 2) * 0.8)))
-        paper.save("sample_result.png")
-        #qim = ImageQt(paper)
-        qim = ImageQt(net_image)
-        pixmap01 = QPixmap.fromImage(qim)
-        lbl.setPixmap(pixmap01)
-        self.imageArea.addWidget(lbl)
+        # net_image = net_image.resize(
+        #     (int((self.B * 3 + self.C * 2) * 0.8), int((self.A * 2 + self.C * 2) * 0.8)))
+        # paper.save("sample_result.png")
+        paper = ImageOps.mirror(paper)
+        self.paper_image = ImageQt(paper)
+        #qim = ImageQt(net_image)
+        # pixmap01 = QPixmap.fromImage(qim)
+        # lbl.setPixmap(pixmap01)
+        # self.imageArea.addWidget(lbl)
         #ax = plt.gca()
         # ax.set_aspect(1)
         # plt.show(block=False)
         # net_center_i.show()
+        self.emit_image.emit(0)
 
     def rotate_paper(self, net_image, paper, theta1):
         theta_np = theta1 / 180 * np.pi
@@ -536,4 +618,3 @@ class WrappingCreator(QWidget):
                     seg["bottom"] = True
 
         return seg
-
