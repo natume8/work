@@ -16,6 +16,7 @@ from .RenderStripeNet import render_stripe
 from .Save2DGraphicsInterface import (render_net_real_size,
                                       render_stripe_real_size,
                                       render_wrap_paper_and_net_real_size,
+                                      render_wp_image_net_real_size,
                                       save_svg_to_pdf)
 from .sample_pictures import Actions, WrappingCreator
 from .InputDataset import InputDataset
@@ -99,6 +100,11 @@ class GWMainWindow(QMainWindow):
                 self, '名前を付けて保存', '/home', 'pdf(*.pdf)')
             if path[0] != "":
                 self.form_widget.save_wrap_pdf(path[0], self.fname)
+        elif self.form_widget.d_w.mode == 1:
+            path = QFileDialog.getSaveFileName(
+                self, '名前を付けて保存', '/home', 'pdf(*.pdf)')
+            if path[0] != "":
+                self.form_widget.save_wrap_image(path[0])
         else:
             path = QFileDialog.getSaveFileName(
                 self, '名前を付けて保存', '/home', 'svg(*.svg);;pdf(*.pdf)')
@@ -127,6 +133,7 @@ class GiftWrapperForm(QWidget):
         self.giftbox = None
         self.b_theta = None
         self.image_emit = None
+        self.image_stripe = None
         self.initUI()
 
     def initUI(self):
@@ -371,6 +378,8 @@ class GiftWrapperForm(QWidget):
                 self.exec_flag = False
             if self.g_w_can_hover:
                 self.g_w_can_hover = False
+            if self.image_stripe != None:
+                self.image_stripe = None
 
     def render_guide_line_with_wrap_paper(self, vertical, horizon, high, theta, w=0, h=0):
         self.pixmap = QImage(self.dev_pict)
@@ -435,14 +444,15 @@ class GiftWrapperForm(QWidget):
         self.image_emit.emit_image.connect(self.recieve_emit_image)
 
     def recieve_emit_image(self, num):
-        r_image = self.image_emit.paper_image
-        pMap = QPixmap.fromImage(r_image)
+        self.image_stripe = self.image_emit.paper_image
+        pMap = QPixmap.fromImage(self.image_stripe)
         pMap = pMap.scaled(QSize(MAX_HORIZON, MAX_VERTICAL),
                            Qt.KeepAspectRatio)
         self.w_lbl.setPixmap(pMap)
         self.w_lbl.move(int(self.width() / 2 - self.lbl.width() / 2),
                         int(self.height() / 2 - self.lbl.height() / 2))
         self.image_emit.close()
+        self.exec_flag = True
 
     def call_function(self, index_l=None):  # 関数の呼び出し
         what_call = self.sender()
@@ -480,6 +490,9 @@ class GiftWrapperForm(QWidget):
 
         if theta < 0 or 90 < theta:
             error_message += "・傾きΘの値が不正です(0~90度で入力してください)\n"
+
+        if self.d_w.mode == 1 and parameters.image_fname == "":
+            error_message += "・読み込む画像を選択してください\n"
 
         if error_message != "":  # エラーを表示
             self.d_w.setWindowFlag(Qt.WindowStaysOnTopHint, on=False)
@@ -546,14 +559,22 @@ class GiftWrapperForm(QWidget):
     def change_slider_value(self, value):
         self.theta_value.setText(str(value / 10))
         self.theta_value.adjustSize()
-        if self.exec_flag:
+        if self.exec_flag and self.d_w.mode != 1:
             self.call_function()
 
     def adjust_text_box(self):
         self.d_w.label_s_angle_t.adjustSize()
         self.d_w.fill_value(self.d_w.label_s_angle_t)
-        if self.exec_flag:
+        if self.exec_flag and self.d_w.mode != 1:
             self.call_function()
+
+    def save_wrap_image(self, path):    # TODO: save image of wrapping paper as pdf
+        vertical = int(float(self.inputVertical.text()))
+        horizon = int(float(self.inputHorizon.text()))
+        high = int(float(self.inputHigh.text()))
+        theta = int(float(self.theta_value.text()))
+        render_wp_image_net_real_size(
+            vertical, horizon, high, theta, path, self.image_stripe)
 
     def save_wrap_pdf(self, path, g_path):
         vertical = float(self.inputVertical.text())

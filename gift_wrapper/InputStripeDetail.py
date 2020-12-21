@@ -30,8 +30,9 @@ class SetParameters:
         self.stripe_interval_width = None
         self.offset = None
         self.stripe_theta = None
-        self.background_color = 'white'
+        self.background_color = '#FFFFFF'
         self.color_set = []
+        self.image_fname = ""
 
     def all_valid(self):
         p_list = [True if i is not None and i != "" and i >= 0 else False
@@ -63,7 +64,6 @@ class SetDetailWindow(QDialog):
         self.center_frame()
         self.initUI()
         self.init_color_UI()
-        self.pattern_name = ""
         self.mode = 0   # 0: color stripe, 1: image stripe
 
         self.setLayout(self.layout)
@@ -287,10 +287,10 @@ class SetDetailWindow(QDialog):
     def load_image_file(self):
         permitted_format = ["jpg", "png", "bpm", "jpeg"]
         fname = QFileDialog.getOpenFileName(self, '画像を開く', '/home')
-        if self.pattern_name != "":
+        if parameters.image_fname != "":
             self.iarea.setPixmap(QPixmap(""))
         if fname[0].split(".")[-1].lower() in permitted_format:
-            self.pattern_name = fname[0]
+            parameters.image_fname = fname[0]
             image = QPixmap(fname[0])
             image = image.scaled(QSize(self.iarea_wrapper.size().width() - 25, self.iarea_wrapper.size().height() - 25),
                                  Qt.KeepAspectRatio)

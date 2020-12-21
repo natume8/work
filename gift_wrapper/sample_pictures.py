@@ -46,6 +46,10 @@ def calc_diff(pixels1, pixels2):
     return diff
 
 
+def hex2tuple(color16):
+    return (int(color16[1:3], 16), int(color16[3:5], 16), int(color16[5:7], 16))
+
+
 class Actions(QDialog):
     """
     Simple dialog that consists of a Progress Bar and a Button.
@@ -128,9 +132,10 @@ class WrappingCreator(QThread):
         th_count = 0
 
         # -----load pattern piece-----
+
         # separete pattern
         #o_pattern = Image.open('./pictures/sample2.png')
-        o_pattern = Image.open('./pictures/picture1.png')
+        o_pattern = Image.open(parameters.image_fname)
         # contenius pattern
         #o_pattern = Image.open('./pictures/sample2.png')
 
@@ -162,7 +167,8 @@ class WrappingCreator(QThread):
         # -----define generating surface-----
         net_image = Image.new('RGBA',
                               (self.B * 3 + self.C * 2, self.A * 2 + self.C * 2),
-                              (200, 200, 200, 0))
+                              parameters.background_color
+                              )
         net_center_i = Image.new(
             'RGBA', (self.B + self.C, self.A + self.C), (200, 200, 200, 0))
         main_s = Image.new('RGBA', (self.B, self.A), (200, 200, 200, 0))
@@ -525,7 +531,7 @@ class WrappingCreator(QThread):
         paper_w, paper_h = self.gift_b.get_valid_paper_size(
             self.theta / 180 * np.pi)
         paper = Image.new(
-            'RGBA', (int(paper_w), int(paper_h)), (200, 200, 200, 0))
+            'RGBA', (int(paper_w), int(paper_h)), parameters.background_color)
         self.rotate_paper(net_image, paper, self.theta)
         th_count += 1
         self.countChanged.emit(th_count)
@@ -569,7 +575,8 @@ class WrappingCreator(QThread):
             np.array([[0 - default[0, 0]], [0 - default[1, 0]]]) + default
         t_origin = Dot(t_o[0, 0], t_o[1, 0])
 
-        r_image = net_image.rotate(theta1, expand=True)
+        r_image = net_image.rotate(
+            theta1, expand=True, fillcolor=hex2tuple(parameters.background_color))
         r_image_o = Dot(
             top_left.x - t_origin.x + w,
             -(top_left.y - t_origin.y + net_image.width *
@@ -580,15 +587,15 @@ class WrappingCreator(QThread):
             for y in range(r_image.height):
                 if 0 <= int(r_image_o.x) + x < paper.width and 0 <= int(r_image_o.y) + y < paper.height:
                     pixel = r_image.getpixel((x, y))
-                    if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
-                        try:
-                            paper.putpixel(
-                                (int(r_image_o.x) + x, int(r_image_o.y) + y), pixel)
-                        except:
-                            print(sys.exc_info()[0])
-                            print(paper.width, paper.height)
-                            print(r_image_o.x + x, r_image_o.y + y)
-                            exit()
+                    # if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
+                    try:
+                        paper.putpixel(
+                            (int(r_image_o.x) + x, int(r_image_o.y) + y), pixel)
+                    except:
+                        print(sys.exc_info()[0])
+                        print(paper.width, paper.height)
+                        print(r_image_o.x + x, r_image_o.y + y)
+                        exit()
 
     def state_segment(self, dots):
         seg = {"top": False, "bottom": False, "left": False, "right": False}

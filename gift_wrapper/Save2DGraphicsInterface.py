@@ -1,5 +1,6 @@
 # -*- coding:utf-8 -*-
 import os
+import io
 
 import numpy as np
 from PyQt5.QtCore import *
@@ -18,12 +19,15 @@ from .InputStripeDetail import parameters
 os.makedirs("./.tmp/", exist_ok=True)
 
 
-def render_net_real_size(vertical, horizon, high, theta, save_path):
+def render_net_real_size(vertical, horizon, high, theta, save_path, flag=0):
     vertical = float(vertical)
     horizon = float(horizon)
     high = float(high)
-    theta = theta * (np.pi / 180)
     g_box = GiftBox(vertical, horizon, high)
+    if flag == 0:
+        theta = theta * (np.pi / 180)
+    else:
+        theta = g_box.get_optimal_theta() * (np.pi / 180)
     g_box.render(theta)
     dots_list_s = g_box.dots_to_render
     dots_list_ = [[i.x, i.y] for i in dots_list_s]
@@ -75,6 +79,8 @@ def render_net_real_size(vertical, horizon, high, theta, save_path):
     painter.drawRect(0, 0, output_p_s[0], output_p_s[1])
 
     painter.end()
+    print("output: ", output_p_s)
+    print("DPI: ", svg_gen.logicalDpiX())
     return minimum_p_s
 
 
@@ -176,6 +182,41 @@ def render_wrap_paper_and_net_real_size(vertical, horizon, high, theta, save_pat
     try:
         with open(tmp_wrap_pdf, "wb") as f:
             f.write(img2pdf.convert(".tmp/save_wrap_paper.png"))
+    except OSError:
+        print("file is Opening")
+    merger = PyPDF2.PdfFileMerger()
+    merger.append(tmp_box_pdf)
+    merger.append(tmp_wrap_pdf)
+    merger.write(save_path)
+    merger.close()
+    os.remove(tmp_box)
+    os.remove(tmp_box_pdf)
+    os.remove(tmp_wrap_pdf)
+    os.remove(".tmp/save_wrap_paper.png")
+
+
+def render_wp_image_net_real_size(vertical, horizon, high, theta, save_path, simage):
+    tmp_box = ".tmp/save_box.svg"
+    tmp_box_pdf = ".tmp/save_box.pdf"
+    tmp_wrap_pdf = ".tmp/save_wrap.pdf"
+    out = render_net_real_size(vertical, horizon, high, theta, tmp_box, flag=1)
+    buffer = QBuffer()
+    buffer.open(QBuffer.ReadWrite)
+    simage.save(buffer, "PNG")
+    pil_im = Image.open(io.BytesIO(buffer.data()))
+    pil_im = pil_im.convert("RGB")
+    print("pil size: ", pil_im.size)
+    pil_im.save(".tmp/save_wrap_paper.png")
+
+    drawing = svg2rlg(tmp_box)
+    renderPDF.drawToFile(drawing, tmp_box_pdf)
+    output_s = (img2pdf.mm_to_pt(out[0]), img2pdf.mm_to_pt(out[1]))
+    layout_fun = img2pdf.get_layout_fun(output_s)
+    print("saved: ", Image.open(".tmp/save_wrap_paper.png").size)
+    try:
+        with open(tmp_wrap_pdf, "wb") as f:
+            f.write(img2pdf.convert(
+                ".tmp/save_wrap_paper.png", layout_fun=layout_fun))
     except OSError:
         print("file is Opening")
     merger = PyPDF2.PdfFileMerger()
