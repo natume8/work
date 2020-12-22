@@ -392,7 +392,8 @@ class WrappingCreator(QThread):
                         if (0 <= x_start + x and x_start + x < self.B) and (0 <= y_start + y and y_start + y < self.A):
                             # if (x_start + x < self.B) and (y_start + y < self.A):
                             pixel = border_w.getpixel((x, y))
-                            if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
+                            # if not (pixel[0] >= 250 and pixel[1] >= 250 and pixel[2] >= 250):
+                            if pixel[3] != 0:
                                 try:
                                     d_main_s.putpixel(
                                         (x_start + x, y_start + y), pixel)
