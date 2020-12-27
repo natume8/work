@@ -504,20 +504,20 @@ class WrappingCreator(QThread):
             min_i = diff_l.index(min(diff_l))
             if seg_dots[1].x == 0 and -seg_dots[1].y == self.A:
                 x_start = int(-(abs(seg_dots[1].y - seg_dots[0].y) * np.cos(
-                    self.theta * np.pi / 180) * np.sin(self.theta * np.pi / 180)))
+                    self.theta * np.pi / 180) * np.sin(self.theta * np.pi / 180))) - dint(x_i * min_i)
                 y_start = int(self.A - (border_w.height - abs(seg_dots[2].x - seg_dots[1].x) * np.cos(
-                    self.theta * np.pi / 180) * np.sin(self.theta * np.pi / 180)))
+                    self.theta * np.pi / 180) * np.sin(self.theta * np.pi / 180))) + min_i
                 # print("5 point: ", index, x_start, y_start)
             else:
                 if -seg_dots[1].y != self.A:
                     x_start = int(self.b_w * -np.sin(self.stripe_angle /
-                                                     180 * np.pi))
-                    y_start = -int(border_w.height - (-seg_dots[1].y))
+                                                     180 * np.pi)) - dint(x_i * min_i)
+                    y_start = -int(border_w.height - (-seg_dots[1].y)) + min_i
                 else:
-                    x_start = int(seg_dots[0].x)
+                    x_start = int(seg_dots[0].x) - dint(x_i * min_i)
                     y_start = self.A - \
                         int(border_w.height - (self.b_w *
-                                               np.cos(self.stripe_angle / 180 * np.pi)))
+                                               np.cos(self.stripe_angle / 180 * np.pi))) + min_i
 
             # print("x start, y start: ", x_start, y_start)
             # print("segs: ", seg_dots[1].x, seg_dots[1].y)
