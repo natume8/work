@@ -46,6 +46,9 @@ class Dot:
         result.move(d1.x, d1.y)
         return result
 
+    def getl(self):
+        return [self.x, self.y]
+
 
 class StripeSegment:  # ただの多角形
     def __init__(self):
@@ -196,8 +199,6 @@ class GiftBox:
         decoi = Dot(2 * self.num2 + 2 * self.num3, -self.num1)
         self.dots_to_render.append(decoi)
 
-    # 描画っぽい形式に直します。今はmatplotで確認しています
-
     def render(self, theta):
         # thetaを元にu,vを算出する
         # 条件式：
@@ -209,6 +210,7 @@ class GiftBox:
         l2 = Q / 2
         w = (l2 + self.num3) * np.sin(theta)
         h = P * np.cos(theta)
+        # print("uv座標: ", w, h)
         # print("uv座標")
         # print(w,h)
 
@@ -367,7 +369,7 @@ class GiftBox:
                 dist += interval_w
             is_bottom_line = not is_bottom_line
 
-        #メイン面を元に他の面を作る
+        # メイン面を元に他の面を作る
         provis_result = []
         for e_stripe in self.all_stripe:
             for e_seg in e_stripe.get():
@@ -481,8 +483,8 @@ class GiftBox:
         line_w = s
         interval_w = u
         offset = offset
-        theta2 = b2s_angle
-        theta1 = b_angle
+        theta1 = b2s_angle
+        theta2 = b_angle
         # define boundary condition
         p = 2 * self.num1 - 2 * self.num2 * \
             np.tan(theta1) + (1 - np.tan(theta1)) * self.num3 + self.beta
@@ -577,105 +579,12 @@ class GiftBox:
                 dist += interval_w
             is_bottom_line = not is_bottom_line
 
-        ##メイン面を元に他の面を作る
-        #provis_result = []
-        #for e_stripe in self.all_stripe:
-        #    for e_seg in e_stripe.get():
-        #        _seg1 = e_seg.reflect(
-        #            Dot(-self.num3 / 2, 0), Dot(-self.num3 / 2, -self.num1))  # 左に鏡映
-        #        provis_result.append(_seg1)
-        #        _seg2 = e_seg.reflect(Dot(0, -(self.num1 * 2 + self.num3) / 2),
-        #                              Dot(self.num2, -(self.num1 * 2 + self.num3) / 2))  # 右下に鏡映
-        #        provis_result.append(_seg2)
-        #        _seg3 = e_seg.reflect(Dot((self.num2 * 2 + self.num3) / 2, 0),
-        #                              Dot((self.num2 * 2 + self.num3) / 2, -self.num1))  # 右に鏡映
-        #        provis_result.append(_seg3)
-        #    for e_seg in provis_result:
-        #        e_stripe.append(e_seg)
-        #    provis_result.clear()
-
-        ## 側面について追加
-        #for e_stripe in self.all_stripe:
-        #    for e_seg in e_stripe.get():
-        #        # mainの左
-        #        if e_seg.have_vertical(0, -self.num1):
-        #            _seg1 = StripeSegment()
-        #            _dot = Dot(0, e_seg.get_vertical(0, -self.num1)[0])
-        #            _seg1.append(_dot)
-        #            _dot = Dot(0, e_seg.get_vertical(0, -self.num1)[1])
-        #            _seg1.append(_dot)
-        #            _dot = Dot(0, e_seg.get_vertical(0, -self.num1)[0])
-        #            _dot.move(-self.num3, 0)
-        #            _seg1.append(_dot)
-        #            _dot = Dot(0, e_seg.get_vertical(0, -self.num1)[1])
-        #            _dot.move(-self.num3, 0)
-        #            _seg1.append(_dot)
-        #            provis_result.append(_seg1)
-
-        #        # メインの左上(上に作ってから鏡映)
-        #        if e_seg.have_horizon(0, -self.num2):
-        #            _seg2 = StripeSegment()
-        #            _dot = Dot(e_seg.get_horizon(0, -self.num2)[0], 0)
-        #            _seg2.append(_dot)
-        #            _dot = Dot(e_seg.get_horizon(0, -self.num2)[1], 0)
-        #            _seg2.append(_dot)
-        #            _dot = Dot(e_seg.get_horizon(0, -self.num2)[0], 0)
-        #            _dot.move(0, self.num3)
-        #            _seg2.append(_dot)
-        #            _dot = Dot(e_seg.get_horizon(0, -self.num2)[1], 0)
-        #            _dot.move(0, self.num3)
-        #            _seg2.append(_dot)
-        #            provis_result.append(_seg2.reflect(
-        #                Dot(-self.num3 / 2, 0), Dot(-self.num3 / 2, self.num2)))
-
-        #        # メインの右
-        #        if e_seg.have_vertical(self.num2, -self.num1):
-        #            _seg3 = StripeSegment()
-        #            _dot = Dot(self.num2, e_seg.get_vertical(
-        #                self.num2, -self.num1)[0])
-        #            _seg3.append(_dot)
-        #            _dot = Dot(self.num2, e_seg.get_vertical(
-        #                self.num2, -self.num1)[1])
-        #            _seg3.append(_dot)
-        #            _dot = Dot(self.num2, e_seg.get_vertical(
-        #                self.num2, -self.num1)[0])
-        #            _dot.move(self.num3, 0)
-        #            _seg3.append(_dot)
-        #            _dot = Dot(self.num2, e_seg.get_vertical(
-        #                self.num2, -self.num1)[1])
-        #            _dot.move(self.num3, 0)
-        #            _seg3.append(_dot)
-        #            provis_result.append(_seg3)
-
-        #        # メインの下
-        #        if e_seg.have_horizon(-self.num1, -self.num2):
-        #            _seg4 = StripeSegment()
-        #            _dot = Dot(e_seg.get_horizon(-self.num1, -
-        #                                         self.num2)[0], -self.num1)
-        #            _seg4.append(_dot)
-        #            _dot = Dot(e_seg.get_horizon(-self.num1, -
-        #                                         self.num2)[1], -self.num1)
-        #            _seg4.append(_dot)
-        #            _dot = Dot(e_seg.get_horizon(-self.num1, -
-        #                                         self.num2)[0], -self.num1)
-        #            _dot.move(0, -self.num3)
-        #            _seg4.append(_dot)
-        #            _dot = Dot(e_seg.get_horizon(-self.num1, -
-        #                                         self.num2)[1], -self.num1)
-        #            _dot.move(0, -self.num3)
-        #            _seg4.append(_dot)
-        #            provis_result.append(_seg4)
-
-        #    for e_dot in provis_result:
-        #        e_stripe.append(e_dot)
-        #    provis_result.clear()
-
+        # ----- debug parts -----
         for e_dot in self.dots_to_render:
             pass
             #e_dot.rot(0, 0, theta1)
             #e_dot.move(w, h)
             # g.plot(e_dot.x, e_dot.y, marker='*')
-
         for e_stripe in self.all_stripe:
             #print("STRIPE:have color")
             # print(e_stripe.r,e_stripe.g,e_stripe.b)

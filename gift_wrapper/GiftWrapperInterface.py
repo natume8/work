@@ -422,6 +422,8 @@ class GiftWrapperForm(QWidget):
     def render_guide_line_with_no_paper(self, vertical, horizon, high, theta):
         theta = theta * (np.pi / 180)
         # if self.giftbox is None:
+        if self.d_w.mode == 1:
+            pass
         self.giftbox = GiftBox(vertical, horizon, high)
         m_ps = render_net_no_image(self.giftbox, theta,
                                    self.paper_size.itemText(self.paper_size.currentIndex()).split()[0])
@@ -491,8 +493,8 @@ class GiftWrapperForm(QWidget):
         if theta < 0 or 90 < theta:
             error_message += "・傾きΘの値が不正です(0~90度で入力してください)\n"
 
-        if self.d_w.mode == 1 and parameters.image_fname == "":
-            error_message += "・読み込む画像を選択してください\n"
+        # if self.d_w.mode == 1 and parameters.image_fname == "":
+        #     error_message += "・読み込む画像を選択してください\n"
 
         if error_message != "":  # エラーを表示
             self.d_w.setWindowFlag(Qt.WindowStaysOnTopHint, on=False)

@@ -28,8 +28,11 @@ def render_net_real_size(vertical, horizon, high, theta, save_path, flag=0):
         theta = theta * (np.pi / 180)
     else:
         theta = g_box.get_optimal_theta() * (np.pi / 180)
+        # print("box render theta: ", theta * 180 / np.pi)
     g_box.render(theta)
     dots_list_s = g_box.dots_to_render
+
+    print()
     dots_list_ = [[i.x, i.y] for i in dots_list_s]
     minimum_p_s = g_box.get_valid_paper_size(theta)  # (w, h)
     svg_gen = QSvgGenerator()
@@ -43,6 +46,10 @@ def render_net_real_size(vertical, horizon, high, theta, save_path, flag=0):
     dots_list = [[i[0] * svg_gen.logicalDpiX() / 25.4,
                   -i[1] * svg_gen.logicalDpiY() / 25.4 + output_p_s[1]]
                  for i in dots_list_]
+
+    # print("real size dots(skelton): ")
+    # for ii, d in enumerate(dots_list):
+    #     print(ii, ": ", d[0], -(d[1] - output_p_s[1]))
 
     painter = NPainter()
     painter.begin(svg_gen)
@@ -77,6 +84,8 @@ def render_net_real_size(vertical, horizon, high, theta, save_path, flag=0):
 
     painter.setPen(pen_2)
     painter.drawRect(0, 0, output_p_s[0], output_p_s[1])
+
+    print("paper origin(1): ", dots_list[1])
 
     painter.end()
     print("output: ", output_p_s)
@@ -205,14 +214,14 @@ def render_wp_image_net_real_size(vertical, horizon, high, theta, save_path, sim
     simage.save(buffer, "PNG")
     pil_im = Image.open(io.BytesIO(buffer.data()))
     pil_im = pil_im.convert("RGB")
-    print("pil size: ", pil_im.size)
+    # print("pil size: ", pil_im.size)
     pil_im.save(".tmp/save_wrap_paper.png")
 
     drawing = svg2rlg(tmp_box)
     renderPDF.drawToFile(drawing, tmp_box_pdf)
     output_s = (img2pdf.mm_to_pt(out[0]), img2pdf.mm_to_pt(out[1]))
     layout_fun = img2pdf.get_layout_fun(output_s)
-    print("saved: ", Image.open(".tmp/save_wrap_paper.png").size)
+    # print("saved: ", Image.open(".tmp/save_wrap_paper.png").size)
     try:
         with open(tmp_wrap_pdf, "wb") as f:
             f.write(img2pdf.convert(
