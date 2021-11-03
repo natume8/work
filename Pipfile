@@ -11,6 +11,7 @@ svglib = "*"
 img2pdf = "*"
 PyPDF2 = "*"
 opencv-python = "*"
+matplotlib = "*"
 
 [dev-packages]
 matplotlib = "*"
