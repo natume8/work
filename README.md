@@ -69,6 +69,10 @@ python app.py
 
 1. 紙を適切な大きさに切り，包装する．
 
+## ユーザーフロー図
+
+![フローチャート](https://raw.githubusercontent.com/s-marika/assist-create-package-design/images/images/flowchart.png)
+
 ## 開発環境
 
 * Windoows10 Home
