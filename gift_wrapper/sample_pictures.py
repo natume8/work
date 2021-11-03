@@ -33,8 +33,6 @@ from .InputStripeDetail import parameters
 # parameters.color_set = []
 # parameters.image_fname = ""
 
-DPI = 72
-
 
 def p_dist(dot1, dot2):
     return math.sqrt((dot1.x - dot2.x) ** 2 + (dot1.y - dot2.y) ** 2)
@@ -68,9 +66,14 @@ class Actions(QDialog):
 
     emit_image = pyqtSignal(int)
 
-    def __init__(self, p_dataset):
+    def __init__(self, p_dataset, save_b=False):
         self.para = p_dataset
         self.paper_image = None
+        if save_b == False:
+            self.dpi = 200
+        else:
+            self.dpi = 300
+        print("dpi:", self.dpi)
         super().__init__()
         self.initUI()
 
@@ -78,7 +81,7 @@ class Actions(QDialog):
         self.setWindowTitle('generating...')
         self.progress = QProgressBar(self)
         self.progress.setGeometry(0, 0, 300, 25)
-        self.prog = WrappingCreator(self.para.get()[0:3])
+        self.prog = WrappingCreator(self.para.get()[0:3], self.dpi)
         self.prog.processNum.connect(self.process_start)
         self.prog.emit_image.connect(self.emitImageArea)
         self.prog.countChanged.connect(self.onCountChanged)
@@ -93,7 +96,11 @@ class Actions(QDialog):
 
     def emitImageArea(self, num):
         self.paper_image = self.prog.paper_image
+        print("create paper : emit...")
         self.emit_image.emit(0)
+        # self.prog.stop()
+        self.prog.quit()
+        self.prog.wait()
 
 
 class WrappingCreator(QThread):
@@ -102,7 +109,7 @@ class WrappingCreator(QThread):
     countChanged = pyqtSignal(int)
     emit_image = pyqtSignal(int)
 
-    def __init__(self, data):
+    def __init__(self, data, DPI):
         super().__init__()
 
         self.lbl = None
@@ -585,9 +592,9 @@ class WrappingCreator(QThread):
             'RGBA', (int(self.B + self.C / 2), int(self.A)), (200, 200, 200, 0))
 
         net_left_i.paste(top_s.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.FLIP_TOP_BOTTOM), (
-            0, 1), top_s.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.FLIP_TOP_BOTTOM).split()[3])
+            0, 0), top_s.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.FLIP_TOP_BOTTOM).split()[3])
         net_left_i.paste(top_s.transpose(Image.FLIP_LEFT_RIGHT), (0, int(
-            self.C / 2 + 1)), top_s.transpose(Image.FLIP_LEFT_RIGHT).split()[3])
+            self.C / 2)), top_s.transpose(Image.FLIP_LEFT_RIGHT).split()[3])
         net_left_i.paste(main_s.transpose(Image.FLIP_LEFT_RIGHT), (0, int(
             self.C)), main_s.transpose(Image.FLIP_LEFT_RIGHT).split()[3])
         net_left_i.paste(left_s.transpose(Image.FLIP_LEFT_RIGHT), (int(self.B), int(
@@ -632,9 +639,10 @@ class WrappingCreator(QThread):
         net_image = net_image.resize((int(self.B * 2), int(self.A * 2)))
         net_image = net_image.resize(
             (int((self.B * 3 + self.C * 2) * 0.8), int((self.A * 2 + self.C * 2) * 0.8)))
-        # net_image.show()
+        net_image.save("netimage.png")
         # paper.save("sample_result.png")
         paper = ImageOps.mirror(paper)
+        # paper.show()
         self.paper_image = ImageQt(paper)
         # qim = ImageQt(net_image)
         # pixmap01 = QPixmap.fromImage(qim)
@@ -646,10 +654,10 @@ class WrappingCreator(QThread):
 
         # net_center_i.show()
         self.emit_image.emit(0)
-        with open(f"experiment/result/{parameters.image_fname.split('/')[-1].split('.')[0]}_{self.stripe_angle}.csv", "a") as fw:
-            writer = csv.DictWriter(fw, ["index", "value", "average"])
-            writer.writeheader()
-            writer.writerows(min_values)
+        # with open(f"experiment/result/{parameters.image_fname.split('/')[-1].split('.')[0]}_{self.stripe_angle}.csv", "a") as fw:
+        #     writer = csv.DictWriter(fw, ["index", "value", "average"])
+        #     writer.writeheader()
+        #     writer.writerows(min_values)
 
     def rotate_paper(self, net_image, paper, theta1):
         theta_np = theta1 / 180 * np.pi

@@ -10,8 +10,7 @@ Pillow = "*"
 svglib = "*"
 img2pdf = "*"
 PyPDF2 = "*"
-opencv-python = "*"
-matplotlib = "*"
+opencv-python-headless = "*"
 
 [dev-packages]
 matplotlib = "*"
@@ -21,4 +20,4 @@ app = "python app.py"
 ex = "python sample_run.py"
 
 [requires]
-python_version = "3.7"
+python_version = "3.8"

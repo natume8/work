@@ -96,17 +96,17 @@ class GWMainWindow(QMainWindow):
 
     def show_filesave_dialog(self):
         # ディレクトリ選択ダイアログを表示
-        if self.form_widget.g_w_can_hover:
+        if self.form_widget.g_w_can_hover:      # image wrapping paper
             path = QFileDialog.getSaveFileName(
                 self, '名前を付けて保存', 'C:/Users/smari/Documents/assist-create-package-design/experiment/output', 'pdf(*.pdf)')
             if path[0] != "":
                 self.form_widget.save_wrap_pdf(path[0], self.fname)
-        elif self.form_widget.d_w.mode == 1:
+        elif self.form_widget.d_w.mode == 1:    # image stripe paper
             path = QFileDialog.getSaveFileName(
                 self, '名前を付けて保存', 'C:/Users/smari/Documents/assist-create-package-design/experiment/output', 'pdf(*.pdf)')
             if path[0] != "":
                 self.form_widget.save_wrap_image(path[0])
-        else:
+        else:                                   # other
             path = QFileDialog.getSaveFileName(
                 self, '名前を付けて保存', 'C:/Users/smari/Documents/assist-create-package-design/experiment/output', 'svg(*.svg);;pdf(*.pdf)')
             if path[0] != "":
@@ -628,6 +628,8 @@ class GiftWrapperForm(QWidget):
             g_box = GiftBox(float(self.inputVertical.text()), float(self.inputHorizon.text()),
                             float(self.inputHigh.text()))
             g_box_theta = g_box.get_optimal_theta()
+            if not g_box_theta:
+                return False
             minimum_ps = g_box.get_valid_paper_size(
                 g_box_theta * (np.pi / 180))
             if text != '指定なし' and (
