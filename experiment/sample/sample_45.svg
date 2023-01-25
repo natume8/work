@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="194.381mm" height="243.417mm"
+ xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"  version="1.2" baseProfile="tiny">
+<title>Qt SVG Document</title>
+<desc>Generated with Qt</desc>
+<defs>
+</defs>
+<g fill="none" stroke="black" stroke-width="1" fill-rule="evenodd" stroke-linecap="square" stroke-linejoin="bevel" >
+
+<g fill="none" stroke="#ff0000" stroke-opacity="1" stroke-width="3" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="MS UI Gothic" font-size="9" font-weight="400" font-style="normal" 
+>
+<polyline fill="none" vector-effect="none" points="0,0 0,-59 " />
+<polyline fill="none" vector-effect="none" points="0,-59 201,-59 " />
+<polyline fill="none" vector-effect="none" points="201,-59 201,0 " />
+<polyline fill="none" vector-effect="none" points="201,0 0,0 " />
+<polyline fill="none" vector-effect="none" points="0,0 0,300 " />
+<polyline fill="none" vector-effect="none" points="201,300 0,300 " />
+<polyline fill="none" vector-effect="none" points="201,300 201,0 " />
+<polyline fill="none" vector-effect="none" points="201,0 260,0 " />
+<polyline fill="none" vector-effect="none" points="201,300 260,300 " />
+<polyline fill="none" vector-effect="none" points="260,0 260,300 " />
+<polyline fill="none" vector-effect="none" points="260,0 462,0 " />
+<polyline fill="none" vector-effect="none" points="462,0 462,300 " />
+<polyline fill="none" vector-effect="none" points="462,300 260,300 " />
+<polyline fill="none" vector-effect="none" points="260,300 260,360 " />
+<polyline fill="none" vector-effect="none" points="260,360 462,360 " />
+<polyline fill="none" vector-effect="none" points="462,360 462,300 " />
+<polyline fill="none" vector-effect="none" points="462,0 521,0 " />
+<polyline fill="none" vector-effect="none" points="521,0 521,300 " />
+<polyline fill="none" vector-effect="none" points="521,300 462,300 " />
+</g>
+
+<g fill="none" stroke="#90ee90" stroke-opacity="1" stroke-width="2" stroke-linecap="square" stroke-linejoin="bevel" transform="matrix(1,0,0,1,0,0)"
+font-family="MS UI Gothic" font-size="9" font-weight="400" font-style="normal" 
+>
+<rect x="0" y="0" width="551" height="690"/>
+</g>
+</g>
+</svg>

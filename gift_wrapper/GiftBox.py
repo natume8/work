@@ -210,9 +210,9 @@ class GiftBox:
         l2 = Q / 2
         w = (l2 + self.num3) * np.sin(theta)
         h = P * np.cos(theta)
-        # print("uv座標: ", w, h)
-        # print("uv座標")
-        # print(w,h)
+        print("uv座標: ", w, h)
+        print("uv座標")
+        print(w, h)
 
         for e_dot in self.dots_to_render:
 

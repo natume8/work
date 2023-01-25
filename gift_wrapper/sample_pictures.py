@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
+import csv
 import time
 import sys
 import math
@@ -31,8 +32,6 @@ from .InputStripeDetail import parameters
 # parameters.background_color = '#FFFFFF'
 # parameters.color_set = []
 # parameters.image_fname = ""
-
-DPI = 72
 
 
 def p_dist(dot1, dot2):
@@ -67,9 +66,14 @@ class Actions(QDialog):
 
     emit_image = pyqtSignal(int)
 
-    def __init__(self, p_dataset):
+    def __init__(self, p_dataset, save_b=False):
         self.para = p_dataset
         self.paper_image = None
+        if save_b == False:
+            self.dpi = 200
+        else:
+            self.dpi = 300
+        print("dpi:", self.dpi)
         super().__init__()
         self.initUI()
 
@@ -77,7 +81,7 @@ class Actions(QDialog):
         self.setWindowTitle('generating...')
         self.progress = QProgressBar(self)
         self.progress.setGeometry(0, 0, 300, 25)
-        self.prog = WrappingCreator(self.para.get()[0:3])
+        self.prog = WrappingCreator(self.para.get()[0:3], self.dpi)
         self.prog.processNum.connect(self.process_start)
         self.prog.emit_image.connect(self.emitImageArea)
         self.prog.countChanged.connect(self.onCountChanged)
@@ -92,7 +96,11 @@ class Actions(QDialog):
 
     def emitImageArea(self, num):
         self.paper_image = self.prog.paper_image
+        print("create paper : emit...")
         self.emit_image.emit(0)
+        # self.prog.stop()
+        self.prog.quit()
+        self.prog.wait()
 
 
 class WrappingCreator(QThread):
@@ -101,7 +109,7 @@ class WrappingCreator(QThread):
     countChanged = pyqtSignal(int)
     emit_image = pyqtSignal(int)
 
-    def __init__(self, data):
+    def __init__(self, data, DPI):
         super().__init__()
 
         self.lbl = None
@@ -114,7 +122,7 @@ class WrappingCreator(QThread):
         # -----define variable-----
         self.gift_b = GiftBox(self.A, self.B, self.C)
         self.theta = self.gift_b.get_optimal_theta()
-        print("wp size theta: ", self.theta)
+        # print("wp size theta: ", self.theta)
         self.b_w = int(parameters.stripe_width * DPI / 25.4)
         self.stripe_angle = int(parameters.stripe_theta)
         self.b_interval = int(parameters.stripe_interval_width * DPI / 25.4)
@@ -124,10 +132,10 @@ class WrappingCreator(QThread):
         self.gift = self.gift_b.all_stripe
         self.gift_b.render(self.theta / 180 * np.pi)
         self.renderdots = self.gift_b.dots_to_render
-        print("real size dots(design paper): ")
-        for ii, gd in enumerate(self.renderdots):
-            print(ii, ": ", gd.x, gd.y)
-        print()
+        # print("real size dots(design paper): ")
+        # for ii, gd in enumerate(self.renderdots):
+        #     print(ii, ": ", gd.x, gd.y)
+        # print()
         # self.giftbox_render()
 
     def initUI(self):
@@ -199,15 +207,23 @@ class WrappingCreator(QThread):
         self.countChanged.emit(th_count)
 
         # draw = ImageDraw.Draw(main_s)
-
+        min_values = []  # ----- for experiment-----
         # -----iterate proccessing of dots of stripe-----
         for index, stripe in enumerate(self.gift):
             seg = stripe.get()[0]
             seg_dots = seg.get()
             if index == 0:
                 seg_dots = [seg_dots[-1]] + seg_dots[:-1:]
-            dot1, dot2 = [seg_dots[1], seg_dots[2]] if p_dist(seg_dots[1], seg_dots[2]) > p_dist(
-                seg_dots[0], seg_dots[3]) else [seg_dots[0], seg_dots[3]]
+            if len(seg_dots) in [4, 6]:
+                dot1, dot2 = [seg_dots[1], seg_dots[-2]] if p_dist(seg_dots[1], seg_dots[-2]) > p_dist(
+                    seg_dots[0], seg_dots[-1]) else [seg_dots[0], seg_dots[-1]]
+            elif len(seg_dots) == 3:
+                dot1, dot2 = [seg_dots[0], seg_dots[2]] if p_dist(seg_dots[0], seg_dots[2]) > p_dist(
+                    seg_dots[1], seg_dots[2]) else [seg_dots[1], seg_dots[2]]
+            else:
+                dot1, dot2 = [seg_dots[1], seg_dots[4]] if p_dist(seg_dots[1], seg_dots[4]) > p_dist(
+                    seg_dots[0], seg_dots[4]) else [seg_dots[0], seg_dots[4]]
+
             # icount = 30
             icount = int(p_dist(dot1, dot2) // pattern.width + 2)
             # print(seg_dots)
@@ -501,6 +517,8 @@ class WrappingCreator(QThread):
                     diff_r += calc_diff(diff[2 * d_i], diff[2 * d_i + 1])
                 diff_l.append(diff_r)
 
+            min_values.append({"index": index, "value": min(
+                diff_l), "average": np.mean(diff_l)})
             min_i = diff_l.index(min(diff_l))
             if seg_dots[1].x == 0 and -seg_dots[1].y == self.A:
                 x_start = int(-(abs(seg_dots[1].y - seg_dots[0].y) * np.cos(
@@ -599,10 +617,10 @@ class WrappingCreator(QThread):
                         (0, 0),
                         net_left_i.split()[3])
         net_image.paste(net_bottom_i,
-                        (int(self.B + self.C), int(self.A + self.C * 3 / 2)),
+                        (int(self.B + self.C), int(self.A + self.C * 3 / 2 - 1)),
                         net_bottom_i.split()[3])
         net_image.paste(net_right_i,
-                        (int(self.B * 2 + self.C * 3 / 2), int(self.C)),
+                        (int(self.B * 2 + self.C * 3 / 2 - 1), int(self.C)),
                         net_right_i.split()[3])
         th_count += 1
         self.countChanged.emit(th_count)
@@ -621,9 +639,10 @@ class WrappingCreator(QThread):
         net_image = net_image.resize((int(self.B * 2), int(self.A * 2)))
         net_image = net_image.resize(
             (int((self.B * 3 + self.C * 2) * 0.8), int((self.A * 2 + self.C * 2) * 0.8)))
-        # net_image.show()
+        net_image.save("netimage.png")
         # paper.save("sample_result.png")
         paper = ImageOps.mirror(paper)
+        # paper.show()
         self.paper_image = ImageQt(paper)
         # qim = ImageQt(net_image)
         # pixmap01 = QPixmap.fromImage(qim)
@@ -635,6 +654,10 @@ class WrappingCreator(QThread):
 
         # net_center_i.show()
         self.emit_image.emit(0)
+        # with open(f"experiment/result/{parameters.image_fname.split('/')[-1].split('.')[0]}_{self.stripe_angle}.csv", "a") as fw:
+        #     writer = csv.DictWriter(fw, ["index", "value", "average"])
+        #     writer.writeheader()
+        #     writer.writerows(min_values)
 
     def rotate_paper(self, net_image, paper, theta1):
         theta_np = theta1 / 180 * np.pi
@@ -688,7 +711,9 @@ class WrappingCreator(QThread):
 
     def state_segment(self, dots):
         seg = {"top": False, "bottom": False, "left": False, "right": False}
-        if len(dots) == 4:
+        if len(dots) == 3:
+            pass
+        elif len(dots) == 4:
             if dots[0].x == 0 and dots[1].x == 0:
                 seg["left"] = True
             if dots[0].y == -self.A and dots[1].y == -self.A:

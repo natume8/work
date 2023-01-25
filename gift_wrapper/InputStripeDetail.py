@@ -286,7 +286,8 @@ class SetDetailWindow(QDialog):
 
     def load_image_file(self):
         permitted_format = ["jpg", "png", "bpm", "jpeg"]
-        fname = QFileDialog.getOpenFileName(self, '画像を開く', '/home')
+        fname = QFileDialog.getOpenFileName(
+            self, '画像を開く', 'C:/Users/smari/Documents/assist-create-package-design/experiment/usefile')
         if parameters.image_fname != "":
             self.iarea.setPixmap(QPixmap(""))
         if fname[0].split(".")[-1].lower() in permitted_format:
