@@ -428,8 +428,8 @@ class GiftWrapperForm(QWidget):
         m_ps = render_net_no_image(self.giftbox, theta,
                                    self.paper_size.itemText(self.paper_size.currentIndex()).split()[0])
         renderer = QSvgRenderer('./.tmp/output_render.svg')
-        w, h = renderer.defaultSize().width() * 4 / \
-            5, renderer.defaultSize().height() * 4 / 5
+        w, h = int(renderer.defaultSize().width() * 4 / \
+            5), int(renderer.defaultSize().height() * 4 / 5)
         self.pixmap = QImage(QSize(w, h), QImage.Format_ARGB32_Premultiplied)
         self.pixmap.fill(QColor("white").rgb())
         painter = QPainter(self.pixmap)

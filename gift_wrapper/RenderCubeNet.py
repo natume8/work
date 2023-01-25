@@ -37,6 +37,7 @@ def render_net_no_image(g_box, theta, specify_ps):
     # theta = theta * (np.pi / 180)
     # g_box = GiftBox(vertical, horizon, high)
     minimum_p_s = g_box.get_valid_paper_size(theta)   # (w, h)
+    minimum_p_s = list(map(int, minimum_p_s))
     g_box.render(theta)
 
     dots_list_s = g_box.dots_to_render
@@ -50,13 +51,14 @@ def render_net_no_image(g_box, theta, specify_ps):
         render_paper = [minimum_p_s[0] * (h / minimum_p_s[1]), h]
     else:
         render_paper = [w, minimum_p_s[1] * (w / minimum_p_s[0])]
+    render_paper = list(map(int, render_paper))
     svg_gen = QSvgGenerator()
     svg_gen.setFileName("./.tmp/output_render.svg")
     svg_gen.setSize(QSize(render_paper[0], render_paper[1]))
     svg_gen.setViewBox(QRect(0, 0, render_paper[0], render_paper[1]))
 
-    dots_list = [[i[0] * (render_paper[1] / minimum_p_s[1]),
-                  -i[1] * (render_paper[1] / minimum_p_s[1]) + render_paper[1]]
+    dots_list = [[int(i[0] * (render_paper[1] / minimum_p_s[1])),
+                  int(-i[1] * (render_paper[1] / minimum_p_s[1]) + render_paper[1])]
                  for i in dots_list_]
 
     painter = NPainter()
@@ -69,7 +71,7 @@ def render_net_no_image(g_box, theta, specify_ps):
         pen = QPen(QColor(255, 0, 0))
     # pen = QPen(QColor(255, 0, 0))
     pen_2 = QPen(QColor(144, 238, 144))
-    pen.setWidth(3)
+    pen.setWidth(2)
     pen_2.setWidth(2)
     painter.setPen(pen)
 

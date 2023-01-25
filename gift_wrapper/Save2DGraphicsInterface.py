@@ -23,6 +23,7 @@ def render_net_real_size(vertical, horizon, high, theta, save_path, flag=0):
     vertical = float(vertical)
     horizon = float(horizon)
     high = float(high)
+    theta = int(theta)
     g_box = GiftBox(vertical, horizon, high)
     if flag == 0:
         theta = theta * (np.pi / 180)
@@ -35,16 +36,18 @@ def render_net_real_size(vertical, horizon, high, theta, save_path, flag=0):
     print()
     dots_list_ = [[i.x, i.y] for i in dots_list_s]
     minimum_p_s = g_box.get_valid_paper_size(theta)  # (w, h)
+    minimum_p_s = list(map(int, minimum_p_s))
     svg_gen = QSvgGenerator()
     svg_gen.setFileName(save_path)  # output_file
     # px = x(mm) * dpi / 25.4
     output_p_s = [minimum_p_s[0] * svg_gen.logicalDpiX() / 25.4,
                   minimum_p_s[1] * svg_gen.logicalDpiY() / 25.4]
+    output_p_s = list(map(int, output_p_s))
     svg_gen.setSize(QSize(output_p_s[0], output_p_s[1]))
     # svg_gen.setViewBox(QRect(0, 0, minimum_p_s[0], minimum_p_s[1]))
 
-    dots_list = [[i[0] * svg_gen.logicalDpiX() / 25.4,
-                  -i[1] * svg_gen.logicalDpiY() / 25.4 + output_p_s[1]]
+    dots_list = [[int(i[0] * svg_gen.logicalDpiX() / 25.4),
+                  int(-i[1] * svg_gen.logicalDpiY() / 25.4 + output_p_s[1])]
                  for i in dots_list_]
 
     # print("real size dots(skelton): ")
@@ -58,7 +61,7 @@ def render_net_real_size(vertical, horizon, high, theta, save_path, flag=0):
     else:
         pen = QPen(QColor(255, 0, 0))
     pen_2 = QPen(QColor(144, 238, 144))
-    pen.setWidth(3)
+    pen.setWidth(2)
     pen_2.setWidth(2)
     painter.setPen(pen)
 
